@@ -3,12 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.9.4",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/lab": "^4.0.0-alpha.44",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "bancor-sdk": "^0.1.9",
+    "bignumber.js": "^9.0.0",
+    "date-fns": "^2.10.0",
+    "material-color-hash": "^0.1.6",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
-    "react-scripts": "3.4.0"
+    "react-number-format": "^4.4.1",
+    "react-scripts": "3.4.0",
+    "web3x-es": "^4.0.6"
   },
   "scripts": {
     "start": "react-scripts start",
