@@ -11,6 +11,9 @@ window.bancor = {
     networkId : undefined,// current networkId
     bancorSdk : _bancorSdk,// bancor sdk's instance
     isLoggedIn : (v) => !!v,// is user logged in (account exists)
+    bytecodes: {},
+    abis: {},
+    normal_abis: {},
 }
 
 

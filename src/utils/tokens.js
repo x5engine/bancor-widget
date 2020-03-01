@@ -1,6 +1,6 @@
 import { bufferToHex, utf8ToHex } from "web3x-es/utils";
 // import * as ethStore from "./eth";
-import safeFetch from "./safeFetch";
+import { safeFetch } from "./safeFetch";
 import Contract from "./Contract";
 import resolve from "./resolve";
 import { fromDecimals, toDecimals } from "./eth";
