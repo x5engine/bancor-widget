@@ -377,7 +377,7 @@ function GetStepContent(step, nextButton) {
 
 export default function Steps() {
     const classes = useStyles();
-    const [activeStep, setActiveStep] = React.useState(2);
+    const [activeStep, setActiveStep] = React.useState(0);
     const steps = getSteps();
 
     const handleNext = () => {

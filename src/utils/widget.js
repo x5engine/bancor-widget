@@ -11,16 +11,16 @@ import { zeroAddress } from "../utils/eth";
 import Required from "../utils/Required";
 import derivedPluck from "../utils/derivedPluck";
 
-export const loading = writable(false); // is widget loading
-export const errorMsg = writable(undefined); // error message to be displayed
-export const tokenSend = writable(undefined); // "send" token
-export const tokenSendBalance = writable(undefined); // "send" token user's balance
-export const tokenSendInput = writable(undefined);
-export const tokenReceive = writable(undefined); // "receive" token
-export const tokenReceiveInput = writable(undefined);
-export const affiliate = writable(undefined);
-export const affiliateFee = writable("0");
-export const success = writable(false); // conversion was successful
+export const loading = false; // is widget loading
+export const errorMsg = undefined; // error message to be displayed
+export const tokenSend = undefined; // "send" token
+export const tokenSendBalance = undefined; // "send" token user's balance
+export const tokenSendInput = undefined;
+export const tokenReceive = undefined; // "receive" token
+export const tokenReceiveInput = undefined;
+export const affiliate = undefined;
+export const affiliateFee = "0";
+export const success = false; // conversion was successful
 
 export const tokensSend = derivedPluck(tokensStore.tokens, tokenReceive); // a Map of all tokens except tokenReceive (used in "Select")
 export const tokensReceive = derivedPluck(tokensStore.tokens, tokenSend); // a Map of all tokens except tokenSend (used in "Select")
@@ -34,7 +34,7 @@ export const pairsAreSelected = derived(
 );
 
 export const getPath = (tokenSendAddress, tokenReceiveAddress) => {
-    return get(ethStore.bancorSdk)
+    return window.bancor.bancorSdk
         .generatePath(
             {
                 blockchainType: "ethereum",
