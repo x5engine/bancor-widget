@@ -11,6 +11,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import NumberFormatInput from './NumberFormatInput';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Divider from '@material-ui/core/Divider';
+import { toBN } from "web3x-es/utils";
 
 import FormControl from '@material-ui/core/FormControl';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
@@ -70,6 +71,12 @@ const useStyles = makeStyles(theme =>({
     }
 }));
 
+
+const affiliate = "0x691c63aa114b7305f012dbe45cf20a602a3bd8ac";
+let affiliateFeePPM = 2 // 2%
+let affiliateFee = '0'
+
+
 const left = ({ sign, balance }) => ` ${sign} ${balance}`;
 const getTokens = () => Array.from(window.contracts.tokens.values());
 
@@ -96,7 +103,28 @@ const formatDecimal = (x) => (x - Math.floor(x) > 0 ? x.toFixed(2) : x);
 const formatInput = (x, raw) =>
     x === 0 && raw !== '.' && raw !== '.0' ? '' : formatDecimal(x);
 
-export default function ExchangeWidget({tokens}) {
+export const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+
+const getPath = (tokenSendAddress, tokenReceiveAddress) => {
+    return window.bancor
+        .bancorSdk
+        .generatePath(
+            {
+                blockchainType: "ethereum",
+                blockchainId: tokenSendAddress
+            },
+            {
+                blockchainType: "ethereum",
+                blockchainId: tokenReceiveAddress
+            }
+        )
+        .then(res => res.paths[0].path);
+};
+const toWei = (x) => web3.utils.toWei(x, 'ether');
+
+
+export default function ExchangeWidget({ tokens, account}) {
     const classes = useStyles();
     const [balance1, setBalance1] = useState(0.1);
     const [currency1, setCurrency1] = useState(ETH);
@@ -106,13 +134,118 @@ export default function ExchangeWidget({tokens}) {
     const loading = tokens && !tokens.length;
 
     console.log(window.contracts);
+    const _bancorNetwork = window.contracts.bancorNetwork;
+
     console.log('=============ExchangeWidget=======================');
     console.log(tokens);
     console.log('====================================');
     useEffect(() => {
-        
+        if (tokens.length)
+            updateReturn()
         // setCurrencies()
-    }, []);
+    }, [tokens]);
+
+    const convertToken = async () => {
+        console.log("convertToken", window.contracts.bancorNetwork);
+        const weiAmount = balance1 / 1000000000000000000; //convert wei to eth
+        const fn = currency1 == "ETH" ? "convert2" : "claimAndConvert2";
+        const ethAmount = currency1 == "ETH" ? weiAmount : undefined;
+        const $affiliate = affiliate;
+        const $affiliateFee = affiliateFee;
+        const precision = 1e18;
+
+        const affiliateAccount = $affiliate ? $affiliate.account : zeroAddress;
+        const affiliateFeePPM =
+            $affiliate && $affiliateFee
+                ? toBN(String($affiliate.fee * precision))
+                    .mul(toBN(1e6))
+                    .div(toBN(String(100 * precision)))
+                    .toString()
+                : "0";
+        const _tokenSend = currency1
+        const _tokenReceive = currency2
+        const path = await getPath(_tokenSend.address, _tokenReceive.address);
+
+        return _bancorNetwork.methods[fn](
+            path,
+            weiAmount,
+            1,
+            affiliateAccount,
+            affiliateFeePPM
+        ).send({
+            from: account,
+            value: ethAmount
+        });
+        
+        // onSuccess: () => {
+        //     success.update(() => true);
+        //     stepsStore.reset();
+        //     updateBalance(tokenSend);
+        // }
+            
+    }
+
+    const updateReturn = async () => {
+        // reset affiliate fee
+        affiliateFee = "0";
+        const sendAmount = toWei(balance1); 
+
+        if (!sendAmount || sendAmount === "0" || !tokens || !tokens.length ) {
+            return null;
+        }
+        
+        const tokenSend = currency1
+        const tokenReceive = currency2
+        // loading.update(() => true);
+        console.log("updateReturn =============={{{{{{{{{{", tokens, tokenSend, tokenReceive);
+
+        const currentPath = await getPath(
+            tokenSend.address,
+            tokenReceive.address
+        );
+
+
+        const {
+            receiveAmountWei = "0",
+            receiveAmount = "0",
+            fee = "0"
+        } = await _bancorNetwork.methods
+            .getReturnByPath(currentPath, sendAmount)
+            .call()
+            .then(res => {
+                const result =   {
+                    receiveAmountWei: res["0"],
+                    // receiveAmount: tokenReceive.toDisplayAmount(res["0"]),
+                    fee: res["1"]
+                }
+                console.log("getReturnByPath",result,res);
+                return result
+            })
+            .catch(error => {
+                console.error(error);
+                // resetInputs();
+                return {};
+            });
+
+        // update fees
+        // if (!get(tokenSend).isBNT && !get(tokenReceive).isEth) {
+        //     affiliateFee.update(() => {
+        //         const $affiliate = get(affiliate);
+        //         const precision = 1e18;
+
+        //         return $affiliate
+        //             ? toBN(receiveAmountWei)
+        //                 .mul(toBN(String($affiliate.fee * precision)))
+        //                 .div(toBN(String(100 * precision)))
+        //                 .toString()
+        //             : "0";
+        //     });
+        // }
+
+        // inputReceive.update(() => receiveAmount);
+        // loading.update(() => false);
+    };
+
     return (
         <Card className={classes.root} >
             <CardContent>
@@ -161,7 +294,7 @@ export default function ExchangeWidget({tokens}) {
                                     ...params.InputProps,
                                     endAdornment: (
                                         <React.Fragment>
-                                            {loading ? <CircularProgress color="blue" size={10} /> : null}
+                                            {loading ? <CircularProgress color="secondary" size={10} /> : null}
                                         </React.Fragment>
                                     ),
                                 }}
@@ -206,7 +339,7 @@ export default function ExchangeWidget({tokens}) {
                                     ...params.InputProps,
                                     endAdornment: (
                                         <React.Fragment>
-                                            {loading ? <CircularProgress color="green" size={10} /> : null}
+                                            {loading ? <CircularProgress color="secondary" size={10} /> : null}
                                         </React.Fragment>
                                     ),
                                 }}
@@ -233,7 +366,7 @@ export default function ExchangeWidget({tokens}) {
                 </Typography>
             </CardContent>
             <CardActions className={classes.actions}>
-                <Button size="large" color="primary" className={classes.button} variant="contained">Convert</Button>
+                <Button size="large" color="primary" className={classes.button} onClick={convertToken} variant="contained">Convert</Button>
             </CardActions>
         </Card>
     );

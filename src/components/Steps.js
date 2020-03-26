@@ -286,7 +286,7 @@ function GetStepContent(step, nextButton) {
                         className={classes.button}
                         target="_blank"
                     >
-                        Pending Transaction  <CircularProgress color="green" size={15} />
+                    Pending Transaction  <CircularProgress color="primary" size={15} />
                     </Button>}
                     {!transactionHash && <Button
                         variant="contained"
@@ -339,7 +339,7 @@ function GetStepContent(step, nextButton) {
                             className={classes.button}
                             target="_blank"
                         >
-                            Pending Transaction <CircularProgress color="green" size={15} />
+                    Pending Transaction <CircularProgress color="primary" size={15} />
                         </Button>}
                     {!transactionHash && <Button
                         variant="contained"

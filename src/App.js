@@ -13,7 +13,7 @@ import {
   fetchingTokens
 } from "./utils/tokens";
 import { addresses as defaultAddresses } from "./env";
-
+import getWeb3 from './utils/getWeb3';
 let tokenSend = "ETH";
 let tokenReceive = "BNT";
 // let colors = defaultColors;
@@ -92,9 +92,25 @@ function App() {
   const [loader, setLoader] = useState(true);
   const [tabIndex, setTab] = useState(0);
   const [tokens, setTokens] = useState([]);
+  const [xweb3, setWeb3] = useState({});
+  const [account, setAccount] = useState({});
   
   useEffect( () => {
-    
+    getWeb3().then((x) => {
+      setWeb3(x);
+      window.bancor.web3 = x;
+      x.eth.getAccounts()
+        .then((c) => {
+          console.log(c); 
+          if(c && c.length)
+            {
+              setAccount(c)
+              x.eth.getBalance(c[0]).then((balance) =>{
+                console.log(balance, x.utils.fromWei(balance, "ether") +" ETH" )
+              });
+            }
+        });
+      })
     fetchData().then((tkx) => setTokens(tkx) )
     
     setTimeout(() => setLoader(false), 500)
@@ -121,7 +137,7 @@ function App() {
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
-          <ExchangeWidget tokens={tokens}  />
+          <ExchangeWidget tokens={tokens} account={account} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
           <NewToken />
