@@ -101,13 +101,19 @@ const BNT = {
 };
 
 
-const toFixed = (x) => x ? x.toFixed(2): x;
+const toFixed = (x) => {
+    const y = parseFloat(x)
+    if(y){
+        return y.toFixed(3).toString()
+    }
+    else return x
+}
 
-const formatDecimal = (x) => (x - Math.floor(x) > 0 ? x.toFixed(2) : x);
+// const formatDecimal = (x) => (x - Math.floor(x) > 0 ? x.toFixed(2) : x);
 
-const xformatInput = (x, raw) =>
-    x === 0 && raw !== '.' && raw !== '.0' ? '' : formatDecimal(x);
-const formatInput = (x, raw) => x
+// const formatInput = (x, raw) =>
+//     x === 0 && raw !== '.' && raw !== '.0' ? '' : formatDecimal(x);
+// // const formatInput = (x, raw) => x
 
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 
@@ -238,7 +244,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                     // receiveAmount: tokenReceive.toDisplayAmount(res["0"]),
                     fee: res["1"]
                 }
-                console.log("getReturnByPath",result,res);
+                console.log("getReturnByPath", result, res, fromDecimals(res[0], 18));
                 // setBalance2(fromDecimals(res[0],18))
                 return result
             })
@@ -276,7 +282,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                 <FormControl className={classes.formControl} variant="outlined" fullWidth>
                     <OutlinedInput
                         classes={{ root: classes.input}}
-                        value={formatInput(balance1)}
+                        value={toFixed(balance1)}
                         onChange={changeB1}
                         autoFocus
                         id="source-pocket-input"
@@ -334,7 +340,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                 <FormControl className={classes.formControl} variant="outlined" fullWidth>
                     <OutlinedInput
                         classes={{ root: classes.input}}
-                        value={formatInput(balance2)}
+                        value={toFixed(balance2)}
                         onChange={setBalance2}
                         autoFocus
                         id="source-pocket-input"
