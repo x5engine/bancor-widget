@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react';
+
 import { Eth } from "web3x-es/eth";
 import BigNumber from "bignumber.js";
 import { LegacyProviderAdapter } from "web3x-es/providers";
@@ -141,4 +143,17 @@ export const toFixed = amount => {
     } else {
         return "<0.001";
     }
+};
+
+
+export const useStateWithLocalStorage = localStorageKey => {
+    const [cart, setCart] = React.useState(
+        JSON.parse(localStorage.getItem(localStorageKey)) || []
+    );
+    React.useEffect(() => {
+        console.log('cart updated', cart);
+        localStorage.setItem(localStorageKey, JSON.stringify(cart));
+    }, [cart]);
+
+    return [cart, setCart];
 };

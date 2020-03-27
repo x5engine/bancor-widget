@@ -40,7 +40,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 
-async function fetchData() {
+async function fetchData(getToken) {
   // when network changes, reinitialize
 
   // initialize ethStore
@@ -51,7 +51,7 @@ async function fetchData() {
     const tokens = await registryInit(_eth, {
       showRelayTokens,
       addresses
-    });
+    }, getToken);
     console.log('====================================');
     console.log("app tokens", tokens);
     console.log('====================================');
@@ -94,7 +94,8 @@ function App() {
   const [tokens, setTokens] = useState([]);
   const [xweb3, setWeb3] = useState({});
   const [account, setAccount] = useState({});
-  
+  const [localTokens, setLocalTokens] = ethStore.useStateWithLocalStorage("BancorExchangeTokens");
+
   useEffect( () => {
     getWeb3().then((x) => {
       setWeb3(x);
@@ -111,9 +112,12 @@ function App() {
             }
         });
       })
-    fetchData().then((tkx) => setTokens(tkx) )
-    
-    setTimeout(() => setLoader(false), 500)
+
+      if(!localTokens || !localTokens.length)
+        fetchData().then((tkx) => { setTokens(tkx); setLoader(false); setLocalTokens(tkx)} )
+      else 
+        fetchData(false).then((tkx) => { setLoader(false); })
+    // setTimeout(() => setLoader(false), 500)
   }, []);
 
   return (
@@ -137,7 +141,7 @@ function App() {
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
-          <ExchangeWidget tokens={tokens} account={account} web={xweb3} />
+          <ExchangeWidget tokens={localTokens} ready={!loader} account={account} web={xweb3} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
           <NewToken web={xweb3} />

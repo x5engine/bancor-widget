@@ -16,6 +16,7 @@ import { toBN } from "web3x-es/utils";
 import FormControl from '@material-ui/core/FormControl';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
 import InputAdornment from '@material-ui/core/InputAdornment';
+import { toDecimals, fromDecimals } from "../utils/eth"
 
 const useStyles = makeStyles(theme =>({
     root: {
@@ -98,15 +99,21 @@ const BNT = {
     isEth: false,
     isBNT: true
 };
-const toFixed = (x) => +x.toFixed(2);
+
+
+const toFixed = (x) => x ? x.toFixed(2): x;
+
 const formatDecimal = (x) => (x - Math.floor(x) > 0 ? x.toFixed(2) : x);
-const formatInput = (x, raw) =>
+
+const xformatInput = (x, raw) =>
     x === 0 && raw !== '.' && raw !== '.0' ? '' : formatDecimal(x);
+const formatInput = (x, raw) => x
 
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 
 const getPath = (tokenSendAddress, tokenReceiveAddress) => {
+    if (window.bancor && window.bancor.bancorSdk)
     return window.bancor
         .bancorSdk
         .generatePath(
@@ -125,7 +132,7 @@ const getPath = (tokenSendAddress, tokenReceiveAddress) => {
 
 
 
-export default function ExchangeWidget({ tokens, account, web3}) {
+export default function ExchangeWidget({ tokens, account, web3, ready}) {
     const classes = useStyles();
     const [balance1, setBalance1] = useState(0.1);
     const [currency1, setCurrency1] = useState(ETH);
@@ -137,21 +144,21 @@ export default function ExchangeWidget({ tokens, account, web3}) {
     console.log(window.contracts);
     const _bancorNetwork = window.contracts.bancorNetwork;
 
-    console.log('=============ExchangeWidget=======================');
+    console.log('=============ExchangeWidget=======================', web3);
     console.log(tokens);
     console.log('====================================');
     useEffect(() => {
-        if (tokens.length)
+        if (ready)
             updateReturn()
         // setCurrencies()
-    }, [tokens]);
+    }, [tokens, ready]);
 
 
-    const toWei = (x) => web3.utils.toWei(x, 'ether');
+    const toWei = (x) => toDecimals(x,18);
 
     const convertToken = async () => {
         console.log("convertToken", window.contracts.bancorNetwork);
-        const weiAmount = balance1 / 1000000000000000000; //convert wei to eth
+        const weiAmount = fromDecimals(balance1,18) // 1000000000000000000; //convert wei to eth
         const fn = currency1 == "ETH" ? "convert2" : "claimAndConvert2";
         const ethAmount = currency1 == "ETH" ? weiAmount : undefined;
         const $affiliate = affiliate;
@@ -189,7 +196,16 @@ export default function ExchangeWidget({ tokens, account, web3}) {
             
     }
 
+    const changeB1 = (e) => {
+        console.log("changeb1",e);
+        
+        // setBalance1()
+    }
+
     const updateReturn = async () => {
+        // if(localTokens){
+        //     setTokens(tokens)
+        // }
         // reset affiliate fee
         affiliateFee = "0";
         const sendAmount = toWei(balance1); 
@@ -223,6 +239,7 @@ export default function ExchangeWidget({ tokens, account, web3}) {
                     fee: res["1"]
                 }
                 console.log("getReturnByPath",result,res);
+                // setBalance2(fromDecimals(res[0],18))
                 return result
             })
             .catch(error => {
@@ -260,7 +277,7 @@ export default function ExchangeWidget({ tokens, account, web3}) {
                     <OutlinedInput
                         classes={{ root: classes.input}}
                         value={formatInput(balance1)}
-                        onChange={setBalance1}
+                        onChange={changeB1}
                         autoFocus
                         id="source-pocket-input"
                         inputComponent={NumberFormatInput}

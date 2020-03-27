@@ -42,3 +42,14 @@ export const getTokenData = async (eth, address) => {
     };
 };
 
+export const useStateWithLocalStorage = localStorageKey => {
+    const [cart, setCart] = React.useState(
+        JSON.parse(localStorage.getItem(localStorageKey)) || []
+    );
+    React.useEffect(() => {
+        console.log('cart updated', cart);
+        localStorage.setItem(localStorageKey, JSON.stringify(cart));
+    }, [cart]);
+
+    return [cart, setCart];
+};

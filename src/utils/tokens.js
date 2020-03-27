@@ -76,7 +76,7 @@ export const getTokenData = async (eth, address) => {
 
 export const init = async (
     eth,
-    { showRelayTokens = false, addresses = {} }
+    { showRelayTokens = false, addresses = {} }, getTokens
 ) => {
     set('tokens', new Map())
     console.log('init tokens');
@@ -138,17 +138,18 @@ export const init = async (
     try {
         set('fetchingTokens', true)
         // console.log("fetchingTokens");
-        
+        let tokensAddress 
         // fetch all erc20 tokens
-        let tokensAddress = await _converterRegistry.methods
+        if (getTokens) {
+            tokensAddress = await _converterRegistry.methods
             .getConvertibleTokens()
             .call()
             .then(res => {
                 return res.map(res => bufferToHex(res.buffer)).reverse();
             });
-
+        }
         // fetch all relay tokens
-        if (showRelayTokens) {
+        if (showRelayTokens ) {
             tokensAddress = tokensAddress.concat(
                 await _converterRegistry.methods
                     .getSmartTokens()
