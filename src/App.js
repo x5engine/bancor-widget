@@ -137,13 +137,10 @@ function App() {
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
-          <ExchangeWidget tokens={tokens} account={account} />
+          <ExchangeWidget tokens={tokens} account={account} web={xweb3} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
-          <NewToken />
-        </TabPanel>
-        <TabPanel value={tabIndex} index={2}>
-          Send
+          <NewToken web={xweb3} />
         </TabPanel>
       </Grid>
     </Grid>

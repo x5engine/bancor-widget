@@ -121,10 +121,11 @@ const getPath = (tokenSendAddress, tokenReceiveAddress) => {
         )
         .then(res => res.paths[0].path);
 };
-const toWei = (x) => web3.utils.toWei(x, 'ether');
 
 
-export default function ExchangeWidget({ tokens, account}) {
+
+
+export default function ExchangeWidget({ tokens, account, web3}) {
     const classes = useStyles();
     const [balance1, setBalance1] = useState(0.1);
     const [currency1, setCurrency1] = useState(ETH);
@@ -144,6 +145,9 @@ export default function ExchangeWidget({ tokens, account}) {
             updateReturn()
         // setCurrencies()
     }, [tokens]);
+
+
+    const toWei = (x) => web3.utils.toWei(x, 'ether');
 
     const convertToken = async () => {
         console.log("convertToken", window.contracts.bancorNetwork);
