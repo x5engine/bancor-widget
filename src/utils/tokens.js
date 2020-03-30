@@ -76,7 +76,7 @@ export const getTokenData = async (eth, address) => {
 
 export const init = async (
     eth,
-    { showRelayTokens = false, addresses = {} }, getTokens
+    { showRelayTokens = false, addresses = {} }, getTokens = true
 ) => {
     set('tokens', new Map())
     console.log('init tokens');

@@ -430,10 +430,10 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                     Exchange Rate:
                 </Typography>
                 <Typography variant="h5" component="h2">
-                    You get : {amountLoading ? <CircularProgress color="secondary" size={20} /> : toFixed(balance2,3)+ " " + currency2.symbol}
+                    You get: {amountLoading ? <CircularProgress color="secondary" size={20} /> : toFixed(balance2,3)+ " " + currency2.symbol}
                 </Typography>
                 <Typography variant="h5" component="h3" color="textSecondary">
-                    Fee: {fee} BNT
+                    Fee {affiliateFeePPM}%: {fee} BNT
                 </Typography>
             </CardContent>
             <CardActions className={classes.actions}>
