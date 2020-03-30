@@ -138,7 +138,7 @@ export const init = async (
     try {
         set('fetchingTokens', true)
         // console.log("fetchingTokens");
-        let tokensAddress 
+        let tokensAddress = []
         // fetch all erc20 tokens
         if (getTokens) {
             tokensAddress = await _converterRegistry.methods

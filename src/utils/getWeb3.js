@@ -36,10 +36,10 @@ const getWeb3 = () => (
 
             const provider = await web3Modal.connect()
             let web3 = new Web3(provider)
-
-            resolve(web3)
+            window.bancor.web3 = web3;
+            return resolve(web3)
         } catch (e) {
-            resolve(e)
+            return resolve(e)
         }
     })
 );

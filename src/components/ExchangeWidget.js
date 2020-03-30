@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 
 import Card from '@material-ui/core/Card';
@@ -73,7 +73,7 @@ const useStyles = makeStyles(theme =>({
 }));
 
 
-const affiliate = "0x691c63aa114b7305f012dbe45cf20a602a3bd8ac";
+const affiliateAccount = "0x691c63aa114b7305f012dbe45cf20a602a3bd8ac";
 let affiliateFeePPM = 2 // 2%
 let affiliateFee = '0'
 
@@ -136,6 +136,31 @@ const getPath = (tokenSendAddress, tokenReceiveAddress) => {
 };
 
 
+/**
+ * Debounce a function by time
+ * @param {Function} func
+ * @param {Number} delay
+ */
+
+const useDebounce = (func, delay) => {
+    const [id, setId] = useState(null)
+    return useMemo(
+        (...args) => {
+            if (id) {
+                clearTimeout(id)
+            } else {
+                setId(
+                    setTimeout(() => {
+                        setId(null)
+                        func(...args)
+                    }, delay)
+                )
+            }
+        },
+        [func]
+    )
+}
+
 
 
 export default function ExchangeWidget({ tokens, account, web3, ready}) {
@@ -144,41 +169,47 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
     const [currency1, setCurrency1] = useState(ETH);
     const [currency2, setCurrency2] = useState(BNT);
     const [balance2, setBalance2] = useState(0.1);
-    const [amount, setAmount] = useState(0);
+    const [amountLoading, setLoading] = useState(0);
+    const [fee, setFee] = useState(0);
     const loading = tokens && !tokens.length;
 
     console.log(window.contracts);
     const _bancorNetwork = window.contracts.bancorNetwork;
 
     console.log('=============ExchangeWidget=======================', web3);
-    console.log(tokens);
+    // console.log(tokens);
+    console.log("balance2", balance2);
     console.log('====================================');
     useEffect(() => {
         if (ready)
             updateReturn()
         // setCurrencies()
-    }, [tokens, ready]);
+    }, [tokens, ready, balance1]);
 
 
     const toWei = (x) => toDecimals(x,18);
 
     const convertToken = async () => {
         console.log("convertToken", window.contracts.bancorNetwork);
-        const weiAmount = fromDecimals(balance1,18) // 1000000000000000000; //convert wei to eth
-        const fn = currency1 == "ETH" ? "convert2" : "claimAndConvert2";
-        const ethAmount = currency1 == "ETH" ? weiAmount : undefined;
-        const $affiliate = affiliate;
+        if (!window.bancor || !window.bancor.web3) return false;
+        const a = window.bancor.web3; 
+        const accounts = await a.eth.getAccounts()
+        if (!accounts || !accounts.length) return null;
+        const weiAmount = toDecimals(balance1,18) // 1000000000000000000; //convert eth to wei
+        const fn = currency1.symbol == "ETH" ? "convert2" : "claimAndConvert2";
+        const ethAmount = currency1.symbol == "ETH" ? weiAmount : undefined;
+        // const $affiliate = affiliate;
         const $affiliateFee = affiliateFee;
         const precision = 1e18;
 
-        const affiliateAccount = $affiliate ? $affiliate.account : zeroAddress;
-        const affiliateFeePPM =
-            $affiliate && $affiliateFee
-                ? toBN(String($affiliate.fee * precision))
-                    .mul(toBN(1e6))
-                    .div(toBN(String(100 * precision)))
-                    .toString()
-                : "0";
+        // const affiliateAccount = $affiliate ? $affiliate.account : zeroAddress;
+        const affiliateFeePPM = 10000 * 2; //2%
+            // $affiliate && $affiliateFee
+            //     ? toBN(String($affiliate.fee * precision))
+            //         .mul(toBN(1e6))
+            //         .div(toBN(String(100 * precision)))
+            //         .toString()
+            //     : "0";
         const _tokenSend = currency1
         const _tokenReceive = currency2
         const path = await getPath(_tokenSend.address, _tokenReceive.address);
@@ -190,7 +221,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
             affiliateAccount,
             affiliateFeePPM
         ).send({
-            from: account,
+            from: accounts[0],
             value: ethAmount
         });
         
@@ -204,8 +235,19 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
 
     const changeB1 = (e) => {
         console.log("changeb1",e);
-        
-        // setBalance1()
+        // clearTimeout(timeOutId);
+        // setTimeOut(null)
+        setBalance1(e.target.value)
+        // useDebounce(updateReturn, 300)
+        setLoading(true)
+        // updateReturn()
+        // setTimeOut(setTimeout(() => updateReturn(), 300))
+    }
+
+    const changeB2 = (e) => {
+        console.log("changeb2",e);
+        setBalance2(e.target.value)
+        // updateOrigin()
     }
 
     const updateReturn = async () => {
@@ -244,8 +286,10 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                     // receiveAmount: tokenReceive.toDisplayAmount(res["0"]),
                     fee: res["1"]
                 }
-                console.log("getReturnByPath", result, res, fromDecimals(res[0], 18));
-                // setBalance2(fromDecimals(res[0],18))
+                console.log("getReturnByPath", result, res, fromDecimals(res[0], 18), toFixed(fromDecimals(res[0], 18)));
+                setBalance2(fromDecimals(res[0],18))
+                setFee(toFixed(fromDecimals(res[1], 18)))
+                setLoading(false)
                 return result
             })
             .catch(error => {
@@ -341,7 +385,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                     <OutlinedInput
                         classes={{ root: classes.input}}
                         value={toFixed(balance2)}
-                        onChange={setBalance2}
+                        onChange={changeB2}
                         autoFocus
                         id="source-pocket-input"
                         inputComponent={NumberFormatInput}
@@ -355,7 +399,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                                 console.log('================newValue====================');
                                 console.log(newValue);
                                 console.log('====================================');
-                                setCurrency1(newValue);
+                                setCurrency2(newValue);
                             }}
                             getOptionSelected={(option, value) => option.symbol === currency2.symbol}
                             getOptionLabel={option => option.symbol}
@@ -386,10 +430,10 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                     Exchange Rate:
                 </Typography>
                 <Typography variant="h5" component="h2">
-                    You Get : {amount} {currency2.symbol}
+                    You get : {amountLoading ? <CircularProgress color="secondary" size={20} /> : toFixed(balance2,3)+ " " + currency2.symbol}
                 </Typography>
                 <Typography variant="h5" component="h3" color="textSecondary">
-                    Fee: {amount}
+                    Fee: {fee} BNT
                 </Typography>
             </CardContent>
             <CardActions className={classes.actions}>

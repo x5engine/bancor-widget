@@ -99,7 +99,7 @@ function App() {
   useEffect( () => {
     getWeb3().then((x) => {
       setWeb3(x);
-      window.bancor.web3 = x;
+      // window.bancor.web3 = x;
       x.eth.getAccounts()
         .then((c) => {
           console.log(c); 

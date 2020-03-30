@@ -147,13 +147,13 @@ export const toFixed = amount => {
 
 
 export const useStateWithLocalStorage = localStorageKey => {
-    const [cart, setCart] = React.useState(
+    const [item, setItem] = React.useState(
         JSON.parse(localStorage.getItem(localStorageKey)) || []
     );
     React.useEffect(() => {
-        console.log('cart updated', cart);
-        localStorage.setItem(localStorageKey, JSON.stringify(cart));
-    }, [cart]);
+        console.log('item updated', item);
+        localStorage.setItem(localStorageKey, JSON.stringify(item));
+    }, [item]);
 
-    return [cart, setCart];
+    return [item, setItem];
 };
