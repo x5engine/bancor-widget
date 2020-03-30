@@ -112,9 +112,14 @@ function App() {
             }
         });
       })
-
+    console.log("localTokens", localTokens, !localTokens || !localTokens.length);
+      
       if(!localTokens || !localTokens.length)
-        fetchData().then((tkx) => { setTokens(tkx); setLoader(false); setLocalTokens(tkx)} )
+        fetchData().then((tkx) => { 
+          console.log("tkx", tkx);
+          
+          setTokens(tkx); setLoader(false); setLocalTokens(tkx)
+        } )
       else 
         fetchData(false).then((tkx) => { setLoader(false); })
     // setTimeout(() => setLoader(false), 500)
@@ -141,7 +146,7 @@ function App() {
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
-          <ExchangeWidget tokens={!localTokens || !localTokens.length ? localTokens : tokens} ready={!loader} account={account} web={xweb3} />
+          <ExchangeWidget tokens={!localTokens || !localTokens.length ? tokens : localTokens} ready={!loader} account={account} web={xweb3} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
           <NewToken web={xweb3} />
