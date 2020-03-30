@@ -141,7 +141,7 @@ function App() {
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
-          <ExchangeWidget tokens={localTokens} ready={!loader} account={account} web={xweb3} />
+          <ExchangeWidget tokens={!localTokens || !localTokens.length ? localTokens : tokens} ready={!loader} account={account} web={xweb3} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
           <NewToken web={xweb3} />
