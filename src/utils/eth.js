@@ -145,10 +145,20 @@ export const toFixed = amount => {
     }
 };
 
+function jsonParse(txt){
+    if (txt) {
+        try {
+            return JSON.parse(txt)
+        } catch (e) {
+            return []
+        }
+    }
+    else return []
+}
 
 export const useStateWithLocalStorage = localStorageKey => {
     const [item, setItem] = React.useState(
-        JSON.parse(localStorage.getItem(localStorageKey)) || []
+        jsonParse(localStorage.getItem(localStorageKey)) || []
     );
     React.useEffect(() => {
         console.log('item updated', item);
