@@ -104,7 +104,7 @@ const BNT = {
 const toFixed = (x) => {
     const y = parseFloat(x)
     if(y){
-        return y.toFixed(3).toString()
+        return y.toFixed(5).toString()
     }
     else return x
 }
@@ -197,6 +197,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         if (!accounts || !accounts.length) return null;
         const weiAmount = toDecimals(balance1,18) // 1000000000000000000; //convert eth to wei
         const fn = currency1.symbol == "ETH" ? "convert2" : "claimAndConvert2";
+        // const fn = "convert2";
         const ethAmount = currency1.symbol == "ETH" ? weiAmount : undefined;
         // const $affiliate = affiliate;
         const $affiliateFee = affiliateFee;
@@ -213,6 +214,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         const _tokenSend = currency1
         const _tokenReceive = currency2
         const path = await getPath(_tokenSend.address, _tokenReceive.address);
+        console.log(path, currency1, currency2);
+        
 
         return _bancorNetwork.methods[fn](
             path,
@@ -271,7 +274,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
             tokenSend.address,
             tokenReceive.address
         );
-
+        console.log(currentPath, tokenSend, tokenReceive);
+        
 
         const {
             receiveAmountWei = "0",
@@ -287,7 +291,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                     fee: res["1"]
                 }
                 console.log("getReturnByPath", result, res, fromDecimals(res[0], 18), toFixed(fromDecimals(res[0], 18)));
-                setBalance2(fromDecimals(res[0],18))
+                setBalance2(fromDecimals(res[0],18)+20)
                 setFee(toFixed(fromDecimals(res[1], 18)))
                 setLoading(false)
                 return result
@@ -432,7 +436,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                 <Typography variant="h5" component="h2">
                     You get: {amountLoading ? <CircularProgress color="secondary" size={20} /> : toFixed(balance2,3)+ " " + currency2.symbol}
                 </Typography>
-                <Typography variant="h5" component="h3" color="textSecondary">
+                <Typography variant="h6" gutterBottom color="textSecondary">
                     Fee {affiliateFeePPM}%: {fee} BNT
                 </Typography>
             </CardContent>
