@@ -11,6 +11,7 @@ import TextField from '@material-ui/core/TextField';
 import { bufferToHex, utf8ToHex } from "web3x-es/utils";
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Slider from '@material-ui/core/Slider';
+import Alert from '@material-ui/lab/Alert';
 
 import Contract, { getBytecode, getNomralAbi } from "../utils/Contract";
 import Web3 from 'web3';
@@ -52,11 +53,12 @@ function allSkippingErrors(promises) {
         promises.map(p => p.catch(error => null))
     )
 }
-const stepsButton = ["Create Relay Token", "Deploy Converter", "Funding & Issue Supply", "Finish" ]
+const stepsButton = ["Create Pool Token", "Deploy Converter", "Funding & Issue Supply", "Finish" ]
 
 function GetStepContent(step, nextButton) {
     const [address, setAddress] = React.useState("");
     const [customToken, setCustomToken] = React.useState({ symbol:"AAA"});
+    const [error, setError] = React.useState("");
     const [transactionHash, setHash] = React.useState("");
     const [maxFee, setMaxFee] = React.useState(3);//3*10000 = 30000
     const [weight, setWeight] = React.useState(50);//50*10000=500000
@@ -66,6 +68,7 @@ function GetStepContent(step, nextButton) {
     const setFetchAddress = async (e) => {
         const address = e.target.value
         setAddress(address)
+        setError("")
         //test KH token     0xcb182bcfbc6e3b71dc11ca7e5a3273842ae71421
         const userToken = await Contract( eth, "ERC20Token", address)
         const [ name, symbol, decimals ] = await allSkippingErrors([
@@ -77,7 +80,12 @@ function GetStepContent(step, nextButton) {
         console.log('================userToken====================');
         console.log(address, userToken, customToken, name, symbol, decimals);
         console.log('====================================');
-        setCustomToken(customToken)
+        if (customToken && customToken.name && customToken.symbol && customToken.decimals){
+            setCustomToken(customToken)
+        }
+        else {
+            setError("Token Address is invalid")
+        }
     }
 
     function valuetext(value) {
@@ -94,12 +102,12 @@ function GetStepContent(step, nextButton) {
         //     gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
         // });
 
-        const text = `Create ${customToken.name}USDB Relay Token.`;
+        const text = `Create ${customToken.name}USDB Pool Token.`;
         // const contract = await Contract( eth, "SmartToken")
         // console.log('==============contract== SmartToken====================');
         // console.log(contract);
         // console.log('====================================');
-        const name = customToken.symbol + "BNT Smart Relay Token";
+        const name = customToken.symbol + "BNT Pool Token";
         const symbol = customToken.symbol + "BTN";
         const decimals = customToken.decimals;
         // const bytecode = await window.bancor.eth.getCode(address);
@@ -261,12 +269,13 @@ function GetStepContent(step, nextButton) {
         case 0:
             return <div style={{marginBottom:10}}>
                     <Typography variant="h4" gutterBottom>
-                        {customToken.symbol+"BNT"} Smart Relay Token Deployment
+                        {customToken.symbol+"BNT"} Pool Token Deployment
                     </Typography>
+                    {!!error && <Alert severity="error">{error}</Alert>}
                     <Typography variant="body2" component="p">
-                        We are creating a relay token AAABNT between your AAA token and BTN token.
+                        We are creating a pool token {customToken.symbol + "BNT"} between your {customToken.symbol} token and BTN token.
                         <br />
-                        Relay tokens are a bridge between your token and the Bancor BNT trade network.
+                        Pool tokens are a bridge between your token and the Bancor BNT trade network.
                     </Typography>
                     <TextField 
                         className={classes.addressInput}
@@ -291,6 +300,7 @@ function GetStepContent(step, nextButton) {
                     {!transactionHash && <Button
                         variant="contained"
                         color="primary"
+                        disabled={!!error}
                         onClick={createSmartToken}
                         className={classes.button}
                     >
@@ -356,7 +366,7 @@ function GetStepContent(step, nextButton) {
                         Funding & Initial Supply
                     </Typography>
                     <Typography variant="body2" component="p">
-                        Our converter is deployed and set up, Now let's fund it and issue the relay token initial supply.
+                        Our converter is deployed and set up, Now let's fund it and issue the Pool token initial supply.
                         then Activate it:
                         <br />
                         Activation means transferring the token ownership to the converter.

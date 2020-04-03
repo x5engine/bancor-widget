@@ -241,15 +241,16 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         const path = await getPath(_tokenSend.address, _tokenReceive.address);
         console.log(path, currency1, currency2, path,
             weiAmount,
-            1,
-            affiliateAccount,
-            affiliateFeePPM,
-            {from: accounts[0],
-            value: ethAmount,
-            gasPrice: 20,
-            // gasLimit: 90000
-            // gasLimit: a.eth.getBlock("latest").gasLimit
-            }
+                // 1,
+                // affiliateAccount,
+                // affiliateFeePPM,
+                // {
+                //     from: accounts[0],
+                //     value: ethAmount,
+                //     gasPrice: 20,
+                // // gasLimit: 90000
+                // // gasLimit: a.eth.getBlock("latest").gasLimit
+                // }
             );
         
 
