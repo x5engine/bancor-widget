@@ -19,7 +19,7 @@ const NumberFormatInput = (props) => {
             // isAllowed={values => validateChange(values.value)}
             thousandSeparator
             allowNegative={false}
-            decimalScale={2}
+            decimalScale={5}
         />
     );
 };

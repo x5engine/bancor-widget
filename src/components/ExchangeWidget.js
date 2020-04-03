@@ -118,6 +118,23 @@ const toFixed = (x) => {
 export const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 
+const getRate = async (tokenSendAddress, tokenReceiveAddress) => {
+    // get the rate between DAI and ENJ
+    const sourceToken = {
+        blockchainType: 'ethereum',
+        blockchainId: tokenSendAddress
+    };
+    const targetToken = {
+        blockchainType: 'ethereum',
+        blockchainId: tokenReceiveAddress
+    };
+    console.log("getRate",sourceToken, targetToken);
+    
+    const rate = await window.bancor
+        .bancorSdk.getRate(sourceToken, targetToken, "1.0");
+    return rate
+}
+
 const getPath = (tokenSendAddress, tokenReceiveAddress) => {
     if (window.bancor && window.bancor.bancorSdk)
     return window.bancor
@@ -184,10 +201,10 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         if (ready)
             updateReturn()
         // setCurrencies()
-    }, [tokens, ready, balance1]);
+    }, [tokens, ready, balance1, currency1, currency2]);
 
 
-    const toWei = (x) => toDecimals(x,18);
+    const toWei = (x,d=18) => toDecimals(x,18);
 
     const convertToken = async () => {
         console.log("convertToken", window.contracts.bancorNetwork);
@@ -196,8 +213,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         const accounts = await a.eth.getAccounts()
         if (!accounts || !accounts.length) return null;
         const weiAmount = toDecimals(balance1,18) // 1000000000000000000; //convert eth to wei
-        const fn = currency1.symbol == "ETH" ? "convert2" : "claimAndConvert2";
-        // const fn = "convert2";
+        // const fn = currency1.symbol == "ETH" ? "convert2" : "claimAndConvert2";
+        const fn = "convert2";
         const ethAmount = currency1.symbol == "ETH" ? weiAmount : undefined;
         // const $affiliate = affiliate;
         const $affiliateFee = affiliateFee;
@@ -259,7 +276,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         // }
         // reset affiliate fee
         affiliateFee = "0";
-        const sendAmount = toWei(balance1); 
+        const decimals = parseInt(currency1.decimals) ? parseInt(currency1.decimals) : 18
+        const sendAmount = toWei(balance1, decimals); 
 
         if (!sendAmount || sendAmount === "0" || !tokens || !tokens.length ) {
             return null;
@@ -268,7 +286,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         const tokenSend = currency1
         const tokenReceive = currency2
         // loading.update(() => true);
-        console.log("updateReturn =============={{{{{{{{{{", tokens, tokenSend, tokenReceive);
+        console.log("updateReturn =============={{{{{{{{{{", balance1, tokenSend, tokenReceive);
 
         const currentPath = await getPath(
             tokenSend.address,
@@ -276,7 +294,9 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         );
         console.log(currentPath, tokenSend, tokenReceive);
         
-
+        // const rate = await getRate(tokenSend.address, tokenReceive.address, balance1)
+        // console.log("rate", rate);
+            
         const {
             receiveAmountWei = "0",
             receiveAmount = "0",
