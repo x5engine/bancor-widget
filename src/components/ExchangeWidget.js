@@ -10,6 +10,7 @@ import TextField from '@material-ui/core/TextField';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import NumberFormatInput from './NumberFormatInput';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Divider from '@material-ui/core/Divider';
 import { toBN } from "web3x-es/utils";
 
@@ -51,12 +52,19 @@ const useStyles = makeStyles(theme =>({
         width: "100%",
         padding:0
     },
+    currency: {
+        width: 20,
+        height: 20,
+        marginRight: 8,
+        marginTop: 3,
+    },
     currencyElement: {
-        width: 70,
-        height: 40,
+        // width: 70,
+        height: 50,
+        overflow:"hidden",
         flexShrink: 0,
         borderRadius: 3,
-        marginRight: 8,
+        marginRight:0,
         marginTop: 2,
     },
     input: {
@@ -231,7 +239,18 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         const _tokenSend = currency1
         const _tokenReceive = currency2
         const path = await getPath(_tokenSend.address, _tokenReceive.address);
-        console.log(path, currency1, currency2);
+        console.log(path, currency1, currency2, path,
+            weiAmount,
+            1,
+            affiliateAccount,
+            affiliateFeePPM,
+            {from: accounts[0],
+            value: ethAmount,
+            gasPrice: 20,
+            // gasLimit: 90000
+            // gasLimit: a.eth.getBlock("latest").gasLimit
+            }
+            );
         
 
         return _bancorNetwork.methods[fn](
@@ -242,7 +261,11 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
             affiliateFeePPM
         ).send({
             from: accounts[0],
-            value: ethAmount
+            value: ethAmount,
+            // gasPrice: '300000000'
+            // gasPrice: 20,
+            // gasLimit: 900000
+            // gasLimit: a.eth.getBlock("latest").gasLimit
         });
         
         // onSuccess: () => {
@@ -368,23 +391,22 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                                 setCurrency1(newValue);
                             }}
                             getOptionSelected={(option, value) => option.symbol === currency1.symbol}
-                            getOptionLabel={option => option.symbol}
-                            // renderOption={(option, { selected }) => (
-                            //     <span className={classes.currencyElement}>
-                            //         <img
-                            //             className={classes.currency}
-                            //             src={option.img}
-                            //             alt={option.symbol}
-                            //             style={{ visibility: selected ? 'visible' : 'hidden' }}
-                            //         />
-                            //         <b>{option.symbol}</b>
-                            //         <br />
-                            //         {option.name}
-                            //     </span>
-                            // )}
+                            getOptionLabel={option => option.symbol ? option.symbol : ''}
+                            renderOption={(option, { selected }) => (
+                                <div className={classes.currencyElement}>
+                                    {option.img && <img
+                                        className={classes.currency}
+                                        src={option.img}
+                                        alt={option.symbol}
+                                    />}
+                                    <b>{option.symbol}</b>
+                                    <br />
+                                    {option.name}
+                                </div>
+                            )}
                             renderInput={params => <TextField
                                  {...params} 
-                                 value={params.symbol} 
+                                value={params.symbol ? params.symbol : ''} 
                                 InputProps={{
                                     ...params.InputProps,
                                     endAdornment: (
@@ -404,7 +426,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                         }}
                     />
                 </FormControl>
-                <Divider style={{margin:40}} />
+
+                {amountLoading ? <LinearProgress variant="query" thickness={1} style={{margin: 40}} /> : <Divider style={{ margin: 40 }} />}
                 <FormControl className={classes.formControl} variant="outlined" fullWidth>
                     <OutlinedInput
                         classes={{ root: classes.input}}
@@ -426,10 +449,22 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                                 setCurrency2(newValue);
                             }}
                             getOptionSelected={(option, value) => option.symbol === currency2.symbol}
-                            getOptionLabel={option => option.symbol}
+                            getOptionLabel={option => option.symbol ? option.symbol : ''}
+                            renderOption={(option, { selected }) => (
+                                <div className={classes.currencyElement}>
+                                    {option.img && <img
+                                        className={classes.currency}
+                                        src={option.img}
+                                        alt={option.symbol}
+                                    />}
+                                    <b>{option.symbol}</b>
+                                    <br />
+                                    {option.name}
+                                </div>
+                            )}
                             renderInput={params => <TextField
                                  {...params} 
-                                 value={params.symbol} 
+                                value={params.symbol ? params.symbol : ""} 
                                 InputProps={{
                                     ...params.InputProps,
                                     endAdornment: (
@@ -454,7 +489,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                     Exchange Rate:
                 </Typography>
                 <Typography variant="h5" component="h2">
-                    You get: {amountLoading ? <CircularProgress color="secondary" size={20} /> : toFixed(balance2,3)+ " " + currency2.symbol}
+                    You get: {amountLoading ? <CircularProgress color="secondary" size={20} thickness={2} /> : toFixed(balance2,3)+ " " + currency2.symbol}
                 </Typography>
                 <Typography variant="h6" gutterBottom color="textSecondary">
                     Fee {affiliateFeePPM}%: {fee} BNT
