@@ -206,9 +206,11 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
     console.log("balance2", balance2);
     console.log('====================================');
     useEffect(() => {
-        if (ready)
-            updateReturn()
-        // setCurrencies()
+        const timeout = setTimeout(() => {
+            if (ready)
+                updateReturn()
+        }, 300)
+        return () => clearTimeout(timeout)
     }, [tokens, ready, balance1, currency1, currency2]);
 
 
@@ -216,7 +218,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
 
     const convertToken = async () => {
         console.log("convertToken", window.contracts.bancorNetwork);
-        if (!window.bancor || !window.bancor.web3) return false;
+        if (!window.bancor || !window.bancor.web3 || !currency1 || !currency2) return resetInputs()
+
         const a = window.bancor.web3; 
         const accounts = await a.eth.getAccounts()
         if (!accounts || !accounts.length) return null;
@@ -267,6 +270,11 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
             // gasPrice: 20,
             // gasLimit: 900000
             // gasLimit: a.eth.getBlock("latest").gasLimit
+        },() => {
+            resetInputs();
+            // success.update(() => true);
+            // stepsStore.reset();
+            // updateBalance(tokenSend);
         });
         
         // onSuccess: () => {
@@ -288,6 +296,13 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         // setTimeOut(setTimeout(() => updateReturn(), 300))
     }
 
+    const resetInputs = () => {
+        setBalance1(0)
+        setBalance2(0)
+        setFee(0)
+        setLoading(false)
+    }
+
     const changeB2 = (e) => {
         console.log("changeb2",e);
         setBalance2(e.target.value)
@@ -299,6 +314,14 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
         //     setTokens(tokens)
         // }
         // reset affiliate fee
+        if (!currency1 || !currency2) return resetInputs();
+
+        if (currency1.address == currency2.address) {
+            setBalance2(balance1)
+            setFee(0)
+            setLoading(false)
+            return true
+        }
         affiliateFee = "0";
         const decimals = parseInt(currency1.decimals) ? parseInt(currency1.decimals) : 18
         const sendAmount = toWei(balance1, decimals); 
@@ -342,8 +365,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
             })
             .catch(error => {
                 console.error(error);
-                // resetInputs();
-                return {};
+                resetInputs();
+                return false;
             });
 
         // update fees
@@ -391,7 +414,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                                 console.log('====================================');
                                 setCurrency1(newValue);
                             }}
-                            getOptionSelected={(option, value) => option.symbol === currency1.symbol}
+                            getOptionSelected={(option, value) => currency1 && option.symbol === currency1.symbol}
                             getOptionLabel={option => option.symbol ? option.symbol : ''}
                             renderOption={(option, { selected }) => (
                                 <div className={classes.currencyElement}>
@@ -449,7 +472,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                                 console.log('====================================');
                                 setCurrency2(newValue);
                             }}
-                            getOptionSelected={(option, value) => option.symbol === currency2.symbol}
+                            getOptionSelected={(option, value) => currency2 && option.symbol === currency2.symbol}
                             getOptionLabel={option => option.symbol ? option.symbol : ''}
                             renderOption={(option, { selected }) => (
                                 <div className={classes.currencyElement}>
@@ -487,10 +510,10 @@ export default function ExchangeWidget({ tokens, account, web3, ready}) {
                 </FormControl>
                
                 <Typography className={classes.pos} color="textSecondary">
-                    Exchange Rate:
+                    Exchange Rate: 
                 </Typography>
                 <Typography variant="h5" component="h2">
-                    You get: {amountLoading ? <CircularProgress color="secondary" size={20} thickness={2} /> : toFixed(balance2,3)+ " " + currency2.symbol}
+                    You get: {amountLoading ? <CircularProgress color="secondary" size={20} thickness={2} /> : toFixed(balance2, 3) + " " + (currency2 ? currency2.symbol :"")}
                 </Typography>
                 <Typography variant="h6" gutterBottom color="textSecondary">
                     Fee {affiliateFeePPM}%: {fee} BNT

@@ -23,7 +23,8 @@
     "underscore": "^1.9.2",
     "web3": "^1.2.6",
     "web3modal": "^1.1.0",
-    "web3x-es": "^4.0.6"
+    "web3x-es": "^4.0.6",
+    "wyre-widget": "0.0.2"
   },
   "scripts": {
     "start": "react-scripts start",
