@@ -7,7 +7,9 @@
 import { Contract as EthContract, ContractAbi } from "web3x-es/contract";
 import {safeFetch, textFetch} from "./safeFetch";
 import { commit } from "../env";
+import Web3 from 'web3';
 
+const web3 = new Web3(Web3.givenProvider);
 const abis = {};
 
 const Contract = async (eth, name, address) => {
@@ -27,6 +29,9 @@ const Contract = async (eth, name, address) => {
             .then(bytecode => "0x" + bytecode);
     }
     const contract = new EthContract(eth, window.bancor.abis[name], address, {});
+    if (name =="BancorNetwork")
+        window.bancor._bancorNetwork = new web3.eth.Contract(window.bancor.normal_abis[name], address)
+    // console.log(" window.bancor.normal_abis[name] xcontract", window.bancor.normal_abis[name], xcontract, name);
     // console.log('============contract========================');
     // console.log(contract);
     // console.log('====================================');

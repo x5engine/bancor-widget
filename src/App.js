@@ -1,7 +1,10 @@
 import React, { useState, useEffect }  from 'react';
+import { BrowserRouter, Route, Link } from 'react-router-dom';
+
 import Grid from '@material-ui/core/Grid';
 import Backdrop from '@material-ui/core/Backdrop';
-import { AppBar, Tabs, Tab, Box, Typography } from '@material-ui/core';
+import { AppBar, Tabs, Tab, Box, Typography, IconButton, Badge   } from '@material-ui/core';
+import AccountCircle from '@material-ui/icons/AccountCircle';
 import ExchangeWidget from './components/ExchangeWidget';
 import NewToken from './components/NewToken';
 import { makeStyles } from '@material-ui/core/styles';
@@ -14,6 +17,9 @@ import {
 } from "./utils/tokens";
 import { addresses as defaultAddresses } from "./env";
 import getWeb3 from './utils/getWeb3';
+import Web3 from 'web3';
+
+const web3 = new Web3(Web3.givenProvider);
 let tokenSend = "ETH";
 let tokenReceive = "BNT";
 // let colors = defaultColors;
@@ -93,19 +99,19 @@ function App() {
   const [tabIndex, setTab] = useState(0);
   const [tokens, setTokens] = useState([]);
   const [xweb3, setWeb3] = useState({});
-  const [account, setAccount] = useState({});
+  const [account, setAccount] = useState("");
   const [localTokens, setLocalTokens] = ethStore.useStateWithLocalStorage("BancorExchangeTokens");
 
   useEffect( () => {
     getWeb3().then((x) => {
       setWeb3(x);
       // window.bancor.web3 = x;
-      x.eth.getAccounts()
+      web3.eth.getAccounts()
         .then((c) => {
-          console.log(c); 
+          console.log("account ",c); 
           if(c && c.length)
             {
-              setAccount(c)
+              setAccount(c[0])
               x.eth.getBalance(c[0]).then((balance) =>{
                 console.log(balance, x.utils.fromWei(balance, "ether") +" ETH" )
               });
@@ -139,7 +145,11 @@ function App() {
       </Backdrop>
       <Grid item className={classes.root} style={{ display: loader ? "none" : "block" }}>
         <AppBar position="static" >
-          <Tabs className={classes.tabs} value={tabIndex} onChange={(e,v) => setTab(v)} aria-label="bancor widget">
+          <Tabs className={classes.tabs}
+            value={tabIndex}
+            onChange={(e,v) => setTab(v)} aria-label="bancor widget"
+            
+            >
             <Tab label="Exchange"  />
             <Tab label="Add Token"  />
             <Tab label="Send" />
@@ -157,3 +167,4 @@ function App() {
 }
 
 export default App;
+//@TODO add router to make link work for wallet

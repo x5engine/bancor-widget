@@ -3,6 +3,9 @@ import Web3Modal from 'web3modal';
 import WalletConnectProvider from '@walletconnect/web3-provider';
 import Authereum from 'authereum';
 import Torus from "@toruslabs/torus-embed";
+import Portis from "@portis/web3";
+import Fortmatic from "fortmatic";
+
 
 const providerOptions = {
     walletconnect: {
@@ -17,7 +20,30 @@ const providerOptions = {
     },
     torus: {
         package: Torus,
-        options: {}
+        options: {
+            config: {
+                enableLogging: false, // optional
+                buttonPosition: "bottom-left", // optional
+                buildEnv: "production", // optional
+                showTorusButton: true, // optional
+                enabledVerifiers: {
+                    // optional
+                    google: false // optional
+                }
+            }
+        }
+    },
+    portis: {
+        package: Portis, // required
+        options: {
+            id: "PORTIS_ID" // required
+        }
+    },
+    fortmatic: {
+        package: Fortmatic, // required
+        options: {
+            key: "FORTMATIC_KEY" // required
+        }
     },
 };
 
