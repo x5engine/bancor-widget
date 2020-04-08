@@ -130,7 +130,7 @@ const useStyles = makeStyles(theme => ({
 
 
 const affiliateAccount = "0x691c63aa114b7305f012dbe45cf20a602a3bd8ac";
-let affiliateFeePPM = 2 // 2%
+let affiliateFeePPM = 0.2 // 2%
 let affiliateFee = '0'
 
 
@@ -317,7 +317,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
         const precision = 1e18;
 
         // const affiliateAccount = $affiliate ? $affiliate.account : zeroAddress;
-        const affiliateFeePPM = 10000 * 2; //2%
+        const affiliateFeePPM = 10000 * 0.2; //0.2%
         // $affiliate && $affiliateFee
         //     ? toBN(String($affiliate.fee * precision))
         //         .mul(toBN(1e6))
@@ -738,7 +738,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
                         onClick={convertToken}
                         variant="contained"
                         disabled={amountLoading || !currency1 || !currency2 || !balance1 || !balance2 || currency2.symbol == currency1.symbol || converting}>
-                        Convert
+                        Swap
                         {converting && <CircularProgress size={24} className={classes.buttonProgress} />}
                     </Button>
                 </div>
