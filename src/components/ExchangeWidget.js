@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Wyre from "wyre-widget";
 import { Link } from 'react-router-dom';
+import FormHelperText from '@material-ui/core/FormHelperText';
 
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
@@ -122,6 +123,9 @@ const useStyles = makeStyles(theme => ({
         marginTop: -12,
         marginLeft: -12,
     },
+    walletBalance:{
+        cursor:"pointer"
+    }
 }));
 
 
@@ -232,13 +236,14 @@ const useDebounce = (func, delay) => {
 
 
 
-export default function ExchangeWidget({ tokens, account, web3, ready }) {
+export default function ExchangeWidget({ tokens, account, web3, ready, balance }) {
     const classes = useStyles();
     const [balance1, setBalance1] = useState(0.1);
     const [currency1, setCurrency1] = useState(ETH);
     const [currency2, setCurrency2] = useState(BNT);
     const [balance2, setBalance2] = useState(0.1);
     const [amountLoading, setLoading] = useState(0);
+    const [walletBalance, setWalletBalance] = useState(0);
     const [fee, setFee] = useState(0);
     const [converting, setConverting] = useState(false);
     const [confirmed, setConfirmed] = useState(false);
@@ -289,9 +294,21 @@ export default function ExchangeWidget({ tokens, account, web3, ready }) {
                 token.methods.allowance(account, _bancorNetwork.address).call()
             ]);
             console.log("erc20Token allowance balance", balance, allowance);
-            await token.methods.approve(_bancorNetwork.address, (weiAmount + toDecimals(fee,currency2.decimals)).toString()).send({
-                from: account
-            });
+            // await token.methods.approve(_bancorNetwork.address, (weiAmount + toDecimals(fee,currency2.decimals)).toString()).send({
+            
+            const totalCheck = parseFloat(weiAmount) + parseFloat(toDecimals(fee, currency2.decimals))
+            console.log("check allowance", weiAmount, toDecimals(fee, currency2.decimals), totalCheck, allowance);
+            if (totalCheck > allowance)
+                {
+                    
+                    // const gas = await token.methods.approve(_bancorNetwork.address, (balance).toString()).estimateGas({
+                    //     from: account
+                    // });
+                    const done = await token.methods.approve(_bancorNetwork.address, (balance).toString()).send({
+                        from: account,
+                        gas: 500000
+                    });
+                }
         }
         // const fn = "convert2";
         const ethAmount = currency1.symbol == "ETH" ? weiAmount : undefined;
@@ -428,6 +445,15 @@ export default function ExchangeWidget({ tokens, account, web3, ready }) {
             setLoading(false)
             return true
         }
+        if(!currency1.isEth)
+        {
+            const token = await Contract(window.bancor.eth, "ERC20Token", currency1.address);
+            console.log(" currency1 erc20Token", token);
+            // const balance = await token.methods.balanceOf(account).call();
+            const balance = await token.methods.balanceOf(account).call();
+            setWalletBalance(parseFloat(fromDecimals(balance,currency1.decimals)))
+        }
+
         affiliateFee = "0";
         const decimals = parseInt(currency1.decimals) ? parseInt(currency1.decimals) : 18
         const sendAmount = toWei(balance1, decimals);
@@ -543,7 +569,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready }) {
                     </IconButton>
                 }
                 title={account.substr(0,20)+"..."}
-                subheader="You Wallet Address"
+                subheader={balance+" ETH"}
             />}
             <Menu
                 id="simple-menu"
@@ -581,6 +607,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready }) {
                         value={toFixed(balance1)}
                         onChange={changeB1}
                         autoFocus
+                        helperText={currency1 && (currency1.symbol == "DAI" || currency1.symbol == 'ETH') ? "Buy " + currency1.symbol + " with your credit Card" : null}
                         id="source-pocket-input"
                         inputComponent={NumberFormatInput}
                         endAdornment={<Autocomplete
@@ -589,6 +616,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready }) {
                             size={'medium'}
                             className={classes.autoc}
                             value={currency1}
+                            
                             onChange={(event, newValue) => {
                                 console.log('================newValue====================');
                                 console.log(newValue);
@@ -631,6 +659,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready }) {
                             // validateChange: validateCurrentChange,
                         }}
                     />
+                    {walletBalance ? <FormHelperText id="component-helper-text" className={classes.walletBalance} onClick={() => setBalance1(walletBalance.toFixed(3))}>You have {walletBalance.toFixed(3)} {currency1 && currency1.symbol}</FormHelperText> : null}
+                    
                 </FormControl>
 
                 {amountLoading ? <LinearProgress variant="query" thickness={1} style={{ margin: 40 }} /> : <Divider style={{ margin: 40 }} />}

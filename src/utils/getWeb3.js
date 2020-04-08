@@ -47,8 +47,7 @@ const providerOptions = {
     },
 };
 
-const getWeb3 = () => (
-    new Promise(async (resolve, reject) => {
+const getWeb3 = async () => {
         try {
             const web3Modal = new Web3Modal({
                 network: 'mainnet',
@@ -62,12 +61,12 @@ const getWeb3 = () => (
 
             const provider = await web3Modal.connect()
             let web3 = new Web3(provider)
-            window.bancor.web3 = web3;
-            return resolve(web3)
-        } catch (e) {
-            return resolve(e)
+            window.bancor.web3 = web3
+            return web3
+        } catch(e) {
+            return new Web3(Web3.givenProvider)
+
         }
-    })
-);
+};
 
 export default getWeb3;

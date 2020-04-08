@@ -100,6 +100,7 @@ function App() {
   const [tokens, setTokens] = useState([]);
   const [xweb3, setWeb3] = useState({});
   const [account, setAccount] = useState("");
+  const [balance, setBalance] = useState(0);
   const [localTokens, setLocalTokens] = ethStore.useStateWithLocalStorage("BancorExchangeTokens");
 
   useEffect( () => {
@@ -114,6 +115,7 @@ function App() {
               setAccount(c[0])
               x.eth.getBalance(c[0]).then((balance) =>{
                 console.log(balance, x.utils.fromWei(balance, "ether") +" ETH" )
+                setBalance(x.utils.fromWei(balance, "ether"))
               });
             }
         });
@@ -156,10 +158,10 @@ function App() {
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
-          <ExchangeWidget tokens={!localTokens || !localTokens.length ? tokens : localTokens} ready={!loader} account={account} web={xweb3} />
+          <ExchangeWidget tokens={!localTokens || !localTokens.length ? tokens : localTokens} ready={!loader} account={account} balance={balance} web={xweb3} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
-          <NewToken web={xweb3} />
+          <NewToken balance={balance} web={xweb3} />
         </TabPanel>
       </Grid>
     </Grid>
