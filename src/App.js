@@ -1,12 +1,16 @@
 import React, { useState, useEffect }  from 'react';
 import { BrowserRouter, Route, Link } from 'react-router-dom';
 
+import { createMuiTheme } from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/core/styles';
+
 import Grid from '@material-ui/core/Grid';
 import Backdrop from '@material-ui/core/Backdrop';
 import { AppBar, Tabs, Tab, Box, Typography, IconButton, Badge   } from '@material-ui/core';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import ExchangeWidget from './components/ExchangeWidget';
 import NewToken from './components/NewToken';
+import BuyCrypto from './components/BuyCrypto';
 import { makeStyles } from '@material-ui/core/styles';
 import * as ethStore from "./utils/eth";
 import {
@@ -33,7 +37,7 @@ const useStyles = makeStyles(theme => ({
   },
   logo: {
     width: 170,
-  }, 
+  },
   tabs: {
     backgroundColor:"#0f59d1"
   },
@@ -45,21 +49,32 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
+const changeTheme = (dark=false) => createMuiTheme({
+  palette: {
+    type: dark ? 'dark' : 'light',
+  },
+});
+
+const theme = createMuiTheme({
+  palette: {
+    type: 'light',
+  },
+});
 
 async function fetchData(getToken) {
   // when network changes, reinitialize
 
   // initialize ethStore
   const _eth = await ethStore.init()
-  console.log(ethStore.networkId, _eth);
-  
+  console.log('networkId',ethStore.networkId, _eth);
+
   if (window.bancor.networkId) {
     const tokens = await registryInit(_eth, {
       showRelayTokens,
       addresses
     }, getToken);
     console.log('====================================');
-    console.log("app tokens", tokens);
+    console.log("recently fetched tokens", tokens);
     console.log('====================================');
     return tokens
   }
@@ -67,7 +82,7 @@ async function fetchData(getToken) {
   // window.ethereum.on("networkChanged", _networkId => {
   //   if (_networkId) {
   //     console.log('sub eth');
-      
+
   //     registryInit(_eth, {
   //       showRelayTokens,
   //       addresses
@@ -96,6 +111,7 @@ function TabPanel(props) {
 function App() {
   const classes = useStyles();
   const [loader, setLoader] = useState(true);
+  const [dark, setDark] = useState(false);
   const [tabIndex, setTab] = useState(0);
   const [tokens, setTokens] = useState([]);
   const [xweb3, setWeb3] = useState({});
@@ -109,7 +125,7 @@ function App() {
       // window.bancor.web3 = x;
       web3.eth.getAccounts()
         .then((c) => {
-          console.log("account ",c); 
+          console.log("account ",c);
           if(c && c.length)
             {
               setAccount(c[0])
@@ -121,20 +137,20 @@ function App() {
         });
       })
     console.log("localTokens", localTokens, !localTokens || !localTokens.length);
-      
       if(!localTokens || !localTokens.length)
-        fetchData().then((tkx) => { 
+        fetchData().then((tkx) => {
           console.log("tkx", tkx);
-          
+
           setTokens(tkx); setLoader(false); setLocalTokens(tkx)
         } )
-      else 
+      else
         fetchData(false).then((tkx) => { setLoader(false); })
     // setTimeout(() => setLoader(false), 500)
   }, []);
 
   return (
-    <Grid 
+    <ThemeProvider theme={theme}>
+    <Grid
       container
       justify="center"
       spacing={0}
@@ -150,21 +166,34 @@ function App() {
           <Tabs className={classes.tabs}
             value={tabIndex}
             onChange={(e,v) => setTab(v)} aria-label="bancor widget"
-            
             >
             <Tab label="Exchange"  />
-            <Tab label="Add Token"  />
-            <Tab label="Send" />
+            <Tab label="Pool"  />
+            <Tab label="Buy with Fiat" />
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
-          <ExchangeWidget tokens={!localTokens || !localTokens.length ? tokens : localTokens} ready={!loader} account={account} balance={balance} web={xweb3} />
+          <ExchangeWidget
+             tokens={!localTokens || !localTokens.length ? tokens : localTokens}
+             ready={!loader}
+             account={account}
+             balance={balance}
+             go2Crypto={() => setTab(2)}
+             web={xweb3} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
           <NewToken balance={balance} web={xweb3} />
         </TabPanel>
+        <TabPanel value={tabIndex} index={2}>
+          <BuyCrypto
+            balance={balance}
+            account={account}
+            goBack={() => setTab(0)}
+          />
+        </TabPanel>
       </Grid>
     </Grid>
+  </ThemeProvider>
   );
 }
 

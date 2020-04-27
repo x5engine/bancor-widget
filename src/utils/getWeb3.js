@@ -28,7 +28,12 @@ const providerOptions = {
                 showTorusButton: true, // optional
                 enabledVerifiers: {
                     // optional
-                    google: false // optional
+                    google: true,
+                    facebook: true,
+                    twitch: true,
+                    reddit: true,
+                    discord: true,
+
                 }
             }
         }
@@ -61,6 +66,7 @@ const getWeb3 = async () => {
 
             const provider = await web3Modal.connect()
             let web3 = new Web3(provider)
+            window.bancor.provider = provider
             window.bancor.web3 = web3
             return web3
         } catch(e) {

@@ -18,6 +18,7 @@ import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
+import SwapVertIcon from '@material-ui/icons/SwapVert';
 
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import NumberFormatInput from './NumberFormatInput';
@@ -27,6 +28,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
 import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
 import SettingsIcon from '@material-ui/icons/Settings';
+import ExitToApp from '@material-ui/icons/ExitToApp';
 
 import Alert from '@material-ui/lab/Alert';
 import Divider from '@material-ui/core/Divider';
@@ -192,6 +194,7 @@ const getRate = async (tokenSendAddress, tokenReceiveAddress) => {
 }
 
 const getPath = (tokenSendAddress, tokenReceiveAddress) => {
+      console.log(tokenSendAddress, tokenReceiveAddress, window.bancor);
     if (window.bancor && window.bancor.bancorSdk)
         return window.bancor
             .bancorSdk
@@ -205,7 +208,11 @@ const getPath = (tokenSendAddress, tokenReceiveAddress) => {
                     blockchainId: tokenReceiveAddress
                 }
             )
-            .then(res => res.paths[0].path);
+            .then(res => {
+              console.log('got path', res);
+              return res.paths[0].path
+
+            });
 };
 
 
@@ -236,7 +243,7 @@ const useDebounce = (func, delay) => {
 
 
 
-export default function ExchangeWidget({ tokens, account, web3, ready, balance }) {
+export default function ExchangeWidget({ tokens, account, web3, ready, balance, go2Crypto }) {
     const classes = useStyles();
     const [balance1, setBalance1] = useState(0.1);
     const [currency1, setCurrency1] = useState(ETH);
@@ -286,7 +293,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
         if (!currency1.isEth){
             token = await Contract(window.bancor.eth, "ERC20Token", currency1.address);
             console.log("erc20Token", token);
-            
+
             // const balance = await token.methods.balanceOf(account).call();
             const [balance, allowance] = await Promise.all([
                 token.methods.balanceOf(account).call(),
@@ -295,12 +302,12 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
             ]);
             console.log("erc20Token allowance balance", balance, allowance);
             // await token.methods.approve(_bancorNetwork.address, (weiAmount + toDecimals(fee,currency2.decimals)).toString()).send({
-            
+
             const totalCheck = parseFloat(weiAmount) + parseFloat(toDecimals(fee, currency2.decimals))
             console.log("check allowance", weiAmount, toDecimals(fee, currency2.decimals), totalCheck, allowance);
             if (totalCheck > allowance)
                 {
-                    
+
                     // const gas = await token.methods.approve(_bancorNetwork.address, (balance).toString()).estimateGas({
                     //     from: account
                     // });
@@ -384,8 +391,8 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
             setError(erMsg)
             setConverting(false)
         }); // If there's an out of gas error the second parameter is the receipt.
-        
-        
+
+
         // , (e, r) => {
         //     console.log("converting",e, r);
         //     setConverting(false)
@@ -417,7 +424,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
 
     const resetInputs = () => {
         console.log("resetInputs");
-        
+
         setBalance1(0)
         setBalance2(0)
         setFee(0)
@@ -530,31 +537,6 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
 
     return (
         <Card className={classes.root} >
-            <Wyre
-                config={{
-                    env: "test",
-                    accountId: "AC_TYGBBFEVAHC", // put your account number here
-                    auth: {
-                        type: "secretKey",
-                        secretKey: 'SK-66788RGG-8QWT9BXU-6PLHMMMU-6R8YUF2Z' // make an API key, put the secret here :)
-                    },
-                    operation: {
-                        type: "debitcard",
-                        destCurrency: "ETH", //change type: can be ETH, DAI, BTC
-                        destAmount: 0.01,
-                        dest: account // if payment goes through this account will receive the crypto balance
-                    },
-                    style: {
-                        primaryColor: "#0055ff"
-                    }
-                }}
-                onReady={() => console.log("ready")}
-                onClose={event => console.log("close", event)}
-                onComplete={event => console.log("complete", event)}
-                open={buyCrypto}
-            >
-                <div />
-            </Wyre>
             {!!account && <CardHeader
                 avatar={
                     <Tooltip title="Address QR Code" aria-label="QR">
@@ -572,13 +554,13 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
                 subheader={balance+" ETH"}
             />}
             <Menu
-                id="simple-menu"
+                id="simple-menux"
                 anchorEl={anchorEl}
                 keepMounted
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
             >
-                <MenuItem onClick={() => setBuyCrypto(true)}>
+                <MenuItem onClick={go2Crypto}>
                     <ListItemIcon>
                         <AttachMoneyIcon fontSize="small" />
                     </ListItemIcon>
@@ -596,6 +578,12 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
                     </ListItemIcon>
                     Settings
                 </MenuItem>
+                <MenuItem onClick={ async ()=> await window.bancor?.provider?.close()}>
+                    <ListItemIcon>
+                        <ExitToApp fontSize="small" />
+                    </ListItemIcon>
+                    Logout
+                </MenuItem>
             </Menu>
             <CardContent>
                 <Typography className={classes.title} color="textSecondary" gutterBottom>
@@ -607,7 +595,6 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
                         value={toFixed(balance1)}
                         onChange={changeB1}
                         autoFocus
-                        helperText={currency1 && (currency1.symbol == "DAI" || currency1.symbol == 'ETH') ? "Buy " + currency1.symbol + " with your credit Card" : null}
                         id="source-pocket-input"
                         inputComponent={NumberFormatInput}
                         endAdornment={<Autocomplete
@@ -616,7 +603,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
                             size={'medium'}
                             className={classes.autoc}
                             value={currency1}
-                            
+
                             onChange={(event, newValue) => {
                                 console.log('================newValue====================');
                                 console.log(newValue);
@@ -659,21 +646,24 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
                             // validateChange: validateCurrentChange,
                         }}
                     />
-                    {walletBalance ? <FormHelperText id="component-helper-text" className={classes.walletBalance} onClick={() => setBalance1(walletBalance.toFixed(3))}>You have {walletBalance.toFixed(3)} {currency1 && currency1.symbol}</FormHelperText> : null}
-                    
+                  {walletBalance ? <FormHelperText id="component-helper-text1" className={classes.walletBalance} onClick={() => setBalance1(walletBalance.toFixed(3))}>You have {walletBalance.toFixed(3)} {currency1 && currency1.symbol}</FormHelperText> : null}
+
                 </FormControl>
 
                 {amountLoading ? <LinearProgress variant="query" thickness={1} style={{ margin: 40 }} /> : <Divider style={{ margin: 40 }} />}
+                {null && <IconButton aria-label="swap" className={classes.margin} size="small">
+                  <SwapVertIcon fontSize="inherit" />
+                </IconButton>}
                 <FormControl className={classes.formControl} variant="outlined" fullWidth>
                     <OutlinedInput
                         classes={{ root: classes.input }}
                         value={toFixed(balance2)}
                         onChange={changeB2}
                         autoFocus
-                        id="source-pocket-input"
+                        id="source-pocket-input2"
                         inputComponent={NumberFormatInput}
                         endAdornment={<Autocomplete
-                            id="combo-box-demo"
+                            id="combo-box-demo2"
                             options={tokens}
                             size={'medium'}
                             className={classes.autoc}
@@ -734,7 +724,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
             <CardActions className={classes.actions}>
                 <div className={classes.wrapper}>
                     <Button size="large" color="primary"
-                        className={classes.button} 
+                        className={classes.button}
                         onClick={convertToken}
                         variant="contained"
                         disabled={amountLoading || !currency1 || !currency2 || !balance1 || !balance2 || currency2.symbol == currency1.symbol || converting}>
@@ -743,8 +733,14 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance }
                     </Button>
                 </div>
             </CardActions>
+            {!txn && !error &&
+              <Alert severity={"light"} className={classes.actions}>
+                  <Button variant="outlined" color="primary" onClick={go2Crypto}>
+                    Buy Crypto
+                  </Button>
+              </Alert>}
             {!!error && <Alert onClose={() => setError("")} severity="warning">{error}</Alert>}
-            {!!txn && 
+            {!!txn &&
                 <Alert onClose={() => { setTx(""); setConfirmed(false)}} severity={confirmed ? "info" : 'success'}>
                     {confirmed ?"Transaction Successfully Confirmed!" :"Your Transaction is processing" }<a target="_blank" href={"https://etherscan.io/tx/"+txn}> here </a>
                 </Alert>}

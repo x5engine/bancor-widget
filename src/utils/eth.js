@@ -4,6 +4,7 @@ import { Eth } from "web3x-es/eth";
 import BigNumber from "bignumber.js";
 import { LegacyProviderAdapter } from "web3x-es/providers";
 import _bancorSdk from "bancor-sdk";
+import { addresses } from "../env";
 
 window.bancor = {
     eth : undefined,// ethereum instance
@@ -87,22 +88,24 @@ export const getAccount = async () => {
 
 // check and update data
 export const sync = async () => {
+  console.log('check and update data');
     const _networkId = await getNetworkId();
     window.bancor.networkId = _networkId
     const _account = await getAccount();
     window.bancor.account = _account
+    console.log('got network', _account,_networkId);
+    await window.bancor.bancorSdk.init({
+        ethereumNodeEndpoint:
+            "https://mainnet.infura.io/v3/ec2c4801bcf44d9daa49f2e541851706",
+            ethereumContractRegistryAddress: addresses[_networkId]
+    });
 };
 
 // initialize and subscribe to ethereum events
 export const init = async () => {
     console.log('init app');
-    
+
     const _eth = await getEth();
-    // TODO: handle other networks
-    await window.bancor.bancorSdk.init({
-        ethereumNodeEndpoint:
-            "https://mainnet.infura.io/v3/ec2c4801bcf44d9daa49f2e541851706"
-    });
     await sync();
 
     if (window.ethereum) {
@@ -111,6 +114,7 @@ export const init = async () => {
         });
 
         window.ethereum.on("networkChanged", _networkId => {
+            console.log('networkChanged',_networkId);
             window.bancor.networkId = _networkId
         });
     } else {
