@@ -20,7 +20,7 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-export default function Pool({ tokens, account }) {
+export default function Pool(props) {
     const classes = useStyles();
     const [spinner, setSpinner] = useState(true);
     const [action, setAction] = useState(2);
@@ -31,8 +31,8 @@ export default function Pool({ tokens, account }) {
     return <Grid item className={classes.root}>
         <Paper className={classes.demo}>
             <SplitButton action={action} setAction={setAction} />
-            {action == 9 && <AddLiquidty />}
-            {action == 9 && <RemoveLiquidity />}
+            {action == 9 && <AddLiquidty {...props} />}
+            {action == 9 && <RemoveLiquidity {...props} />}
             {action == 2 && <Steps />}
 
         </Paper>

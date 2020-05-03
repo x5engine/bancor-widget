@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import Wyre from "wyre-widget";
 import { Link } from 'react-router-dom';
 import FormHelperText from '@material-ui/core/FormHelperText';
 
@@ -724,15 +723,17 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance, 
             </CardContent>
             <CardActions className={classes.actions}>
                 <div className={classes.wrapper}>
-                    <Button size="large" color="primary"
-                        className={classes.button}
-                        onClick={convertToken}
-                        variant="contained"
-                        startIcon={<SwapVertIcon />}
-                        disabled={amountLoading || !currency1 || !currency2 || !balance1 || !balance2 || currency2.symbol == currency1.symbol || converting}>
-                        Swap
-                        {converting && <CircularProgress size={24} className={classes.buttonProgress} />}
-                    </Button>
+                    <Tooltip title="Swap Tokens" aria-label="Swap">
+                        <Button size="large" color="primary"
+                            className={classes.button}
+                            onClick={convertToken}
+                            variant="contained"
+                            startIcon={<SwapVertIcon />}
+                            disabled={amountLoading || !currency1 || !currency2 || !balance1 || !balance2 || currency2.symbol == currency1.symbol || converting}>
+                            Swap
+                            {converting && <CircularProgress size={24} className={classes.buttonProgress} />}
+                        </Button>
+                    </Tooltip>
                 </div>
             </CardActions>
             {!txn && !error &&

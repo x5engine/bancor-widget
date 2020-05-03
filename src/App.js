@@ -191,21 +191,12 @@ function App() {
             >
               <Tab classes={{
                 root: classes.rootTab,
-                // labelContainer: classes.labelContainer,
-                // rootInheritSelected: classes.rootInheritSelected,
-                // labelWrapped: classes.labelWrapped,
               }} label="Exchange"  />
               <Tab classes={{
                 root: classes.rootTab,
-                // labelContainer: classes.labelContainer,
-                // rootInheritSelected: classes.rootInheritSelected,
-                // labelWrapped: classes.labelWrapped,
               }} label="Pool"  />
               <Tab classes={{
                 root: classes.rootTab,
-                // labelContainer: classes.labelContainer,
-                // rootInheritSelected: classes.rootInheritSelected,
-                // labelWrapped: classes.labelWrapped,
               }} label="Crypto/Fiat" />
           </Tabs>
         </AppBar>
