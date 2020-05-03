@@ -9,7 +9,7 @@ import Backdrop from '@material-ui/core/Backdrop';
 import { AppBar, Tabs, Tab, Box, Typography, IconButton, Badge   } from '@material-ui/core';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import ExchangeWidget from './components/ExchangeWidget';
-import NewToken from './components/NewToken';
+import Pool from './components/Pool';
 import BuyCrypto from './components/BuyCrypto';
 import { makeStyles } from '@material-ui/core/styles';
 import * as ethStore from "./utils/eth";
@@ -191,21 +191,21 @@ function App() {
             >
               <Tab classes={{
                 root: classes.rootTab,
-                labelContainer: classes.labelContainer,
-                rootInheritSelected: classes.rootInheritSelected,
-                labelWrapped: classes.labelWrapped,
+                // labelContainer: classes.labelContainer,
+                // rootInheritSelected: classes.rootInheritSelected,
+                // labelWrapped: classes.labelWrapped,
               }} label="Exchange"  />
               <Tab classes={{
                 root: classes.rootTab,
-                labelContainer: classes.labelContainer,
-                rootInheritSelected: classes.rootInheritSelected,
-                labelWrapped: classes.labelWrapped,
+                // labelContainer: classes.labelContainer,
+                // rootInheritSelected: classes.rootInheritSelected,
+                // labelWrapped: classes.labelWrapped,
               }} label="Pool"  />
               <Tab classes={{
                 root: classes.rootTab,
-                labelContainer: classes.labelContainer,
-                rootInheritSelected: classes.rootInheritSelected,
-                labelWrapped: classes.labelWrapped,
+                // labelContainer: classes.labelContainer,
+                // rootInheritSelected: classes.rootInheritSelected,
+                // labelWrapped: classes.labelWrapped,
               }} label="Crypto/Fiat" />
           </Tabs>
         </AppBar>
@@ -219,7 +219,12 @@ function App() {
              web={xweb3} />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
-          <NewToken balance={balance} web={xweb3} />
+          <Pool
+            tokens={!localTokens || !localTokens.length ? tokens : localTokens}
+            ready={!loader}
+            account={account}
+            balance={balance}
+           />
         </TabPanel>
         <TabPanel value={tabIndex} index={2}>
           <BuyCrypto

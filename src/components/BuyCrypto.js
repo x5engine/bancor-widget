@@ -88,7 +88,7 @@ export default function BuyCrypto({ open, account, goBack }) {
         </RadioGroup>
         <TextField
           id="standard-number"
-          label="Number"
+          label="Amount to buy"
           type="number"
           value={amount}
           onChange={(event) => {

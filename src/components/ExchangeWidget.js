@@ -654,6 +654,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance, 
                 {null && <IconButton aria-label="swap" className={classes.margin} size="small">
                   <SwapVertIcon fontSize="inherit" />
                 </IconButton>}
+
                 <FormControl className={classes.formControl} variant="outlined" fullWidth>
                     <OutlinedInput
                         classes={{ root: classes.input }}
@@ -727,6 +728,7 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance, 
                         className={classes.button}
                         onClick={convertToken}
                         variant="contained"
+                        startIcon={<SwapVertIcon />}
                         disabled={amountLoading || !currency1 || !currency2 || !balance1 || !balance2 || currency2.symbol == currency1.symbol || converting}>
                         Swap
                         {converting && <CircularProgress size={24} className={classes.buttonProgress} />}
@@ -735,9 +737,16 @@ export default function ExchangeWidget({ tokens, account, web3, ready, balance, 
             </CardActions>
             {!txn && !error &&
               <Alert severity={"light"} className={classes.actions}>
-                  <Button variant="outlined" color="primary" onClick={go2Crypto}>
+                <Tooltip title="Buy Crypto with Fiat" aria-label="buy crypto">
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={go2Crypto}
+                    startIcon={<AttachMoneyIcon />}
+                    >
                     Buy Crypto
                   </Button>
+                </Tooltip>
               </Alert>}
             {!!error && <Alert onClose={() => setError("")} severity="warning">{error}</Alert>}
             {!!txn &&

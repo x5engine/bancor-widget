@@ -76,7 +76,7 @@ function GetStepContent(step, nextButton) {
             userToken.methods.symbol().call(),
             userToken.methods.decimals().call(),
         ])
-        const customToken = { name, symbol, decimals } 
+        const customToken = { name, symbol, decimals }
         console.log('================userToken====================');
         console.log(address, userToken, customToken, name, symbol, decimals);
         console.log('====================================');
@@ -132,18 +132,18 @@ function GetStepContent(step, nextButton) {
 
         // const gas = await MyContract.deploy({
         //     data: getBytecode("SmartToken"),
-        //     arguments: [name, symbol, decimals] 
+        //     arguments: [name, symbol, decimals]
         // }).estimateGas()
 
         //test KH token     0xcb182bcfbc6e3b71dc11ca7e5a3273842ae71421
         console.log("MyContract", MyContract, name, symbol, Number(decimals) );
-        
+
         const gas = await MyContract.deploy({
             data: bytesCode,
             arguments: [name, symbol, Number(decimals)] ,
             from: window.bancor.account.toString(),
         }).estimateGas();
-        
+
         /* Data field of the transaction. */
         // const transactionData = contractDeployInfo.encodeABI();
         /* Then I estimate the gas, using the provided method. */
@@ -180,7 +180,7 @@ function GetStepContent(step, nextButton) {
             setHash("")
             nextButton()
         });
-        
+
     }
 
     const createConverter = async () => {
@@ -239,7 +239,7 @@ function GetStepContent(step, nextButton) {
                             nextButton()
                         })
                 })
-        }); 
+        });
     }
 
     function fundAndIssue (){
@@ -268,7 +268,7 @@ function GetStepContent(step, nextButton) {
     switch (step) {
         case 0:
             return <div style={{marginBottom:10}}>
-                    <Typography variant="h4" gutterBottom>
+                    <Typography variant="h5" gutterBottom>
                         {customToken.symbol+"BNT"} Pool Token Deployment
                     </Typography>
                     {!!error && <Alert severity="error">{error}</Alert>}
@@ -277,17 +277,17 @@ function GetStepContent(step, nextButton) {
                         <br />
                         Pool tokens are a bridge between your token and the Bancor BNT trade network.
                     </Typography>
-                    <TextField 
+                    <TextField
                         className={classes.addressInput}
-                        id="outlined-basic" 
-                        label="Token Address" 
+                        id="outlined-basic"
+                        label="Token Address"
                         value={address}
                         onChange={setFetchAddress}
                         variant="outlined"
                         placeholder="0x...."
-                        helperText="Enter the Address of your token - the token you want to add to Bancor:" 
+                        helperText="Enter the Address of your token - the token you want to add to Bancor:"
                     />
-                    {!!transactionHash && 
+                    {!!transactionHash &&
                     <Button
                         variant="outlined"
                         color="secondary"
@@ -309,7 +309,7 @@ function GetStepContent(step, nextButton) {
                 </div>;
         case 1:
             return <div style={{ marginBottom: 10 }}>
-                    <Typography variant="h4" gutterBottom>
+                    <Typography variant="h5" gutterBottom>
                         {customToken.symbol + "BNT"} Converter Deployment
                     </Typography>
                     <Typography variant="body2" component="p">
@@ -362,7 +362,7 @@ function GetStepContent(step, nextButton) {
                 </div>;
         case 2:
             return <div style={{ marginBottom: 10 }}>
-                    <Typography variant="h4" gutterBottom>
+                    <Typography variant="h5" gutterBottom>
                         Funding & Initial Supply
                     </Typography>
                     <Typography variant="body2" component="p">
@@ -405,7 +405,7 @@ export default function Steps() {
     return (
         <div className={classes.root}>
             <Typography variant="h4" gutterBottom>
-                Adding a Token to Bancor Network
+                Create Pool Token in Bancor Network
             </Typography>
             <Stepper activeStep={activeStep} orientation="vertical">
                 {steps.map((label, index) => (
@@ -448,4 +448,4 @@ export default function Steps() {
     );
 }
 
-// create liquidity pool token, liquidity pool converter, fund the pool and transfer ownership 
+// create liquidity pool token, liquidity pool converter, fund the pool and transfer ownership
