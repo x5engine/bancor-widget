@@ -46,7 +46,29 @@ const useStyles = makeStyles(theme => ({
   },
   box: {
     padding:0
-  }
+  },
+  rootTab: {
+    minWidth: "33%",
+    height: '100%',
+    color: 'rgba(255,255,255,0.5)',
+    alignItems: 'flex-start',
+    paddingBottom: 5,
+    wordWrap: 'break-word',
+    flex: 1,
+    overflowWrap: 'break-word',
+    textAlign: 'center',
+  },
+  labelContainer: {
+    paddingLeft: 0,
+    paddingRight: 0,
+  },
+
+  rootInheritSelected: {
+    color: '#FFF',
+  },
+  labelWrapped: {
+    fontSize: '0.875rem',
+  },
 }));
 
 const changeTheme = (dark=false) => createMuiTheme({
@@ -167,9 +189,24 @@ function App() {
             value={tabIndex}
             onChange={(e,v) => setTab(v)} aria-label="bancor widget"
             >
-            <Tab label="Exchange"  />
-            <Tab label="Pool"  />
-            <Tab label="Buy with Fiat" />
+              <Tab classes={{
+                root: classes.rootTab,
+                labelContainer: classes.labelContainer,
+                rootInheritSelected: classes.rootInheritSelected,
+                labelWrapped: classes.labelWrapped,
+              }} label="Exchange"  />
+              <Tab classes={{
+                root: classes.rootTab,
+                labelContainer: classes.labelContainer,
+                rootInheritSelected: classes.rootInheritSelected,
+                labelWrapped: classes.labelWrapped,
+              }} label="Pool"  />
+              <Tab classes={{
+                root: classes.rootTab,
+                labelContainer: classes.labelContainer,
+                rootInheritSelected: classes.rootInheritSelected,
+                labelWrapped: classes.labelWrapped,
+              }} label="Crypto/Fiat" />
           </Tabs>
         </AppBar>
         <TabPanel value={tabIndex} index={0}>
