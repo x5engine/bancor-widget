@@ -13,7 +13,6 @@
     "@testing-library/user-event": "^7.1.2",
     "@toruslabs/torus-embed": "^1.2.6",
     "@walletconnect/web3-provider": "^1.0.0-beta.47",
-    "authereum": "0.0.4-beta.128",
     "bancor-sdk": "^0.1.13",
     "bignumber.js": "^9.0.0",
     "date-fns": "^2.11.1",

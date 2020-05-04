@@ -1,7 +1,6 @@
 import Web3 from 'web3';
 import Web3Modal from 'web3modal';
 import WalletConnectProvider from '@walletconnect/web3-provider';
-import Authereum from 'authereum';
 import Torus from "@toruslabs/torus-embed";
 import Portis from "@portis/web3";
 import Fortmatic from "fortmatic";
@@ -13,10 +12,6 @@ const providerOptions = {
         options: {
             infuraId: '1a3489db693d46ceb5ef9006f5ada61f'
         }
-    },
-    authereum: {
-        package: Authereum,
-        options: {}
     },
     torus: {
         package: Torus,
