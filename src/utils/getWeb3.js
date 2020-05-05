@@ -36,13 +36,14 @@ const providerOptions = {
     portis: {
         package: Portis, // required
         options: {
-            id: "PORTIS_ID" // required
+            id: "fe7a22b2-65bc-4779-ac09-c07556ffba01" // required
+
         }
     },
     fortmatic: {
         package: Fortmatic, // required
         options: {
-            key: "FORTMATIC_KEY" // required
+            key: "pk_live_F9E8476BA891ADCD" // required
         }
     },
 };
