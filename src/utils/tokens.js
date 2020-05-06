@@ -83,10 +83,12 @@ export const init = async (
     
     const _networkId = window.bancor.networkId;
     // only mainnet or localhost
+    console.log("addresses", addresses);
     if (!addresses[_networkId]) return;
 
+    
     const ContractRegistryAddr = addresses[_networkId];
-
+    console.log("addresses", ContractRegistryAddr);
     // initialize contracts
     const _contractRegistry = await Contract(
         eth,

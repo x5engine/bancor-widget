@@ -101,16 +101,16 @@ async function fetchData(getToken) {
     return tokens
   }
 
-  // window.ethereum.on("networkChanged", _networkId => {
-  //   if (_networkId) {
-  //     console.log('sub eth');
+  window.ethereum.on("networkChanged", _networkId => {
+    if (_networkId) {
+      console.log('sub eth');
 
-  //     registryInit(_eth, {
-  //       showRelayTokens,
-  //       addresses
-  //     });
-  //   }
-  // });
+      registryInit(_eth, {
+        showRelayTokens,
+        addresses
+      });
+    }
+  });
 }
 
 function TabPanel(props) {

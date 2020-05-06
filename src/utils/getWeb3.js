@@ -47,10 +47,18 @@ const providerOptions = {
     },
 };
 
+export const getNetworkId = async () => {
+    const _eth = window.bancor.eth;
+    if (!_eth) return undefined;
+
+    return _eth.getId();
+};
+
 const getWeb3 = async () => {
+    const networkId = await getNetworkId()
         try {
             const web3Modal = new Web3Modal({
-                network: 'mainnet',
+                network: networkId == 1 ? 'mainnet' : "ropsten",
                 cacheProvider: true,
                 providerOptions
             })
