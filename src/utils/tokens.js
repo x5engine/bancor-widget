@@ -4,6 +4,13 @@ import { safeFetch } from "./safeFetch";
 import Contract from "./Contract";
 import resolve from "./resolve";
 import { fromDecimals, toDecimals } from "./eth";
+
+import Web3 from 'web3';
+const web3 = new Web3(Web3.givenProvider);
+
+const BancorConverter = require('../abis/BancorConverter.json');
+// const ERC20Token = require('../../../contracts/ERC20Token.json');
+
 window.contracts = {
     contractRegistry : undefined,// contractRegistry instance
     converterRegistry : undefined,// converterRegistry instance
@@ -11,7 +18,10 @@ window.contracts = {
     bntToken : undefined,// bancorNetwork's token instance
     fetchingTokens: false,// are we currently fetching tokens
     tokens: new Map(),// all tokens keyed by address
+    web3,
 }
+
+let eth = window.bancor.eth
 
 let contractRegistry = window.contracts.contractRegistry
 const get = key => window.contracts[key]
@@ -43,11 +53,39 @@ function allSkippingErrors(promises) {
     )
 }
 
+export const getSmartTokenData = async (address) => {
+    const smartToken = new web3.eth.Contract(window.bancor.normal_abis.SmartToken, address)
+
+    const [totalSupply, symbol, decimals = 18, owner ] = await allSkippingErrors([
+        smartToken.methods.totalSupply().call(),
+        smartToken.methods.symbol().call(),
+        smartToken.methods.decimals().call(),
+        smartToken.methods.owner().call(),
+    ]);
+
+    return {
+        totalSupply,
+        symbol,
+        decimals,
+        owner
+    }
+}
+
+export const getSmartTokenSymbol = async (address) => {
+    const smartToken = new web3.eth.Contract(window.bancor.normal_abis.SmartToken, address)
+    // console.log("smarToken", smartToken);
+    
+    const [symbol] = await allSkippingErrors([
+        smartToken.methods.symbol().call(),
+    ]);
+    return symbol
+}
+
 // get relevant token data
-export const getTokenData = async (eth, address) => {
+export const getTokenData = async (eth, address, noImage = false) => {
     const _bancorNetwork = get("bancorNetwork");
     const _bntToken = get("bntToken");
-
+    let img = '';
     const token = await Contract(eth, "ERC20Token", address);
 
     const [name, symbol, decimals = 18, isEth] = await allSkippingErrors([
@@ -58,7 +96,8 @@ export const getTokenData = async (eth, address) => {
         // getTokenImgByBancor(symbol)
     ]);
 
-    const img = await getTokenImgByBancor(symbol);
+    if(!noImage)
+        img = await getTokenImgByBancor(symbol);
     // const img = `https://rawcdn.githack.com/crypti/cryptocurrencies/ed13420a6b22b25bbed53e2cbe6d8db302ec0c6a/images/${symbol}.png`;
 
     return {
@@ -183,3 +222,82 @@ export const init = async (
         console.log('tokens loaded', window.contracts.tokens);
     }
 };
+
+export const getConverterData = async(address) => {
+    const BCC = new web3.eth.Contract(BancorConverter, address);
+
+    const [connectorTokenCount, token1 ] = await allSkippingErrors([
+        BCC.methods.connectorTokenCount().call(),
+        BCC.methods.connectorTokens(0).call(),
+        BCC.methods.decimals().call(),
+    ]);
+
+    const [connectorReserveRatio, connectorReserveBalance] = await allSkippingErrors([
+        BCC.methods.getReserveRatio(token1).call(),
+        BCC.methods.getReserveBalance(token1).call(),
+    ]);
+    console.log("token1 converter data", token1);
+    
+    return {
+        connectorBalance: fromDecimals(connectorReserveBalance, 18),
+        connectorWeight: connectorReserveRatio / 10000,
+        numConnectors: connectorTokenCount,
+        connectorAdress: token1,
+    };
+}
+
+export const getBalanceOfToken = async (tokenAddress, isEth) => {
+    const web3 = window.web3;
+    const senderAddress = web3.currentProvider.selectedAddress;
+
+    if (senderAddress === undefined || senderAddress === null) {
+        return "0";
+    }
+    if (!isEth) {
+        // const erc20Contract = new web3.eth.Contract(ERC20Token, tokenAddress);
+        const erc20Contract = await Contract(eth, "ERC20Token", tokenAddress);
+        const addressBalanceResponse = await erc20Contract.methods.balanceOf(senderAddress).call()
+        return addressBalanceResponse
+    } else {
+        return await web3.eth.getBalance(senderAddress)
+    }
+}
+
+// export const getUserPoolHoldings = (poolRow) => {
+//     const web3 = window.web3;
+//     const senderAddress = web3.currentProvider.selectedAddress;
+//     if (isEmptyString(senderAddress)) {
+//         return poolRow
+//     }
+//     const poolSmartTokenAddress = poolRow.address;
+//     const SmartTokenContract = new web3.eth.Contract(window.bancor.normal_abis.SmartToken, poolSmartTokenAddress);
+
+//     let poolReserveHoldingsRequest = poolRow.reserves.map(function (item) {
+//         const reserveTokenAddress = item.address;
+//         let isEth = false;
+//         if (item.symbol === 'ETH') {
+//             isEth = true;
+//         }
+//         return getBalanceOfToken(reserveTokenAddress, isEth).then(function (balanceResponse) {
+//             const availableUserBalance = fromDecimals(balanceResponse, item.decimals);
+//             return Object.assign({}, item, { userBalance: availableUserBalance });
+//         })
+//     });
+//     return Promise.all(poolReserveHoldingsRequest).then(function (response) {
+//         return getSenderBalanceOfToken(SmartTokenContract, senderAddress).then(function (balanceData) {
+//             poolRow.reserves = response;
+//             poolRow.senderBalance = balanceData;
+//             return poolRow;
+//         });
+//     });
+// }
+
+const addLiquidity = () => {
+    const x = window.contracts.converterRegistry
+    // const b1 = await x.methods.getConvertibleTokens().call()
+    // const b2 = await x.methods.getConvertersBySmartTokens(smt).call()
+    // https://github.com/pRoy24/katanapools/blob/7823606424d295aa4e315c5c8e308bd8761b2eaf/src/utils/RegistryUtils.js#L194
+}
+
+// https://etherscan.io/token/images/sirin_28.png
+// https://xnation.io/eth/pool/DAIBNT

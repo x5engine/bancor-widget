@@ -23,7 +23,7 @@ const useStyles = makeStyles(theme => ({
 export default function Pool(props) {
     const classes = useStyles();
     const [spinner, setSpinner] = useState(true);
-    const [action, setAction] = useState(2);
+    const [action, setAction] = useState(0);
     useEffect(() => {
         // setTimeout(() => setSpinner(false), 500)
     }, []);
@@ -31,8 +31,8 @@ export default function Pool(props) {
     return <Grid item className={classes.root}>
         <Paper className={classes.demo}>
             <SplitButton action={action} setAction={setAction} />
-            {action == 9 && <AddLiquidty {...props} />}
-            {action == 9 && <RemoveLiquidity {...props} />}
+            {action == 0 && <AddLiquidty {...props} />}
+            {action == 1 && <RemoveLiquidity {...props} />}
             {action == 2 && <Steps />}
 
         </Paper>
