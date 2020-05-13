@@ -191,7 +191,7 @@ export default function AddLiquidty({ tokens, ready }) {
       }
     }))
     //set loading pools
-    console.log('smartTokensSymbols loaded', smartTokensSymbols);
+    // console.log('smartTokensSymbols loaded', smartTokensSymbols);
     setPools(smartTokensSymbols)
     setSMCount(pools.length)
     //end loading pool
@@ -349,6 +349,7 @@ export default function AddLiquidty({ tokens, ready }) {
     {!!reserves && !!reserves.length && <div>
       <h6>You will needs to stake</h6>
       <List component="nav" aria-label="main mailbox folders">
+        <h4>{ reservesDisplay[0]?.neededDisplay=='NaN' && 'This Pool needs to be upgraded to load its reserves ratios'}</h4>
       {reserves.map((r,i)=>(<ListItem key={i} button>
           {<ListItemText
             primary={r.symbol+' '+(reservesDisplay[i]?.neededDisplay ? reservesDisplay[i].neededDisplay : '')}
