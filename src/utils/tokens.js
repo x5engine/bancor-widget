@@ -9,7 +9,7 @@ import Web3 from 'web3';
 const web3 = new Web3(Web3.givenProvider);
 
 const BancorConverter = require('../abis/BancorConverter.json');
-// const ERC20Token = require('../../../contracts/ERC20Token.json');
+const ERC20Token = require('../abis/ERC20Token.json');
 
 window.contracts = {
     contractRegistry : undefined,// contractRegistry instance
@@ -36,7 +36,7 @@ export const getTokenImgByBancor = async symbol => {
 
             const imgFile = res.data.primaryCommunityImageName || "";
             const [name, ext] = imgFile.split(".");
-            
+
 
             const img = `https://storage.googleapis.com/bancor-prod-file-store/images/communities/cache/${name}_200w.${ext}`;
             // console.log('====================================');
@@ -55,7 +55,7 @@ function allSkippingErrors(promises) {
 
 export const getSmartTokenData = async (address) => {
     const smartToken = new web3.eth.Contract(window.bancor.normal_abis.SmartToken, address)
-
+    console.log("smarToken", smartToken);
     const [totalSupply, symbol, decimals = 18, owner ] = await allSkippingErrors([
         smartToken.methods.totalSupply().call(),
         smartToken.methods.symbol().call(),
@@ -74,7 +74,7 @@ export const getSmartTokenData = async (address) => {
 export const getSmartTokenSymbol = async (address) => {
     const smartToken = new web3.eth.Contract(window.bancor.normal_abis.SmartToken, address)
     // console.log("smarToken", smartToken);
-    
+
     const [symbol] = await allSkippingErrors([
         smartToken.methods.symbol().call(),
     ]);
@@ -119,13 +119,13 @@ export const init = async (
 ) => {
     set('tokens', new Map())
     console.log('init tokens');
-    
+
     const _networkId = window.bancor.networkId;
     // only mainnet or localhost
     console.log("addresses", addresses);
     if (!addresses[_networkId]) return;
 
-    
+
     const ContractRegistryAddr = addresses[_networkId];
     console.log("addresses", ContractRegistryAddr);
     // initialize contracts
@@ -210,7 +210,7 @@ export const init = async (
         //     //     fn: async () => {
         //     //         const data = await getTokenData(eth, tokenAddress);
         //     //         // console.log("getTokenData",data);
-                    
+
         //     //         window.contracts.tokens.set(tokenAddress, data);
         //     //     }
         //     // }))
@@ -237,13 +237,73 @@ export const getConverterData = async(address) => {
         BCC.methods.getReserveBalance(token1).call(),
     ]);
     console.log("token1 converter data", token1);
-    
+
     return {
         connectorBalance: fromDecimals(connectorReserveBalance, 18),
         connectorWeight: connectorReserveRatio / 10000,
         numConnectors: connectorTokenCount,
         connectorAdress: token1,
     };
+}
+
+
+
+export const getER20Data = async(address) => {
+  const token = new web3.eth.Contract(ERC20Token, address);
+
+  const [decimals, symbol] = await allSkippingErrors([
+      token.methods.decimals().call(),
+      token.methods.symbol().call(),
+  ]);
+
+  return {
+    decimals,
+    symbol
+  }
+}
+
+export const getPoolReserves = async(address) => {
+    const BCC = new web3.eth.Contract(BancorConverter, address);
+
+    const [connectorTokenCount] = await allSkippingErrors([
+        BCC.methods.connectorTokenCount().call(),
+    ]);
+
+    if( !connectorTokenCount || isNaN(connectorTokenCount) || parseInt(connectorTokenCount) == 0) return {
+      connectorTokenCount,
+    };
+
+    let tokens = await allSkippingErrors([...Array(parseInt(connectorTokenCount)).keys()].map((index)=>{
+      return BCC.methods.connectorTokens(index).call()
+    }))
+
+    let tokensInfo = await allSkippingErrors(tokens.map((tokenAddress)=>{
+      return getER20Data(tokenAddress)
+    }));
+
+    const tokenBalances = await allSkippingErrors(tokens.flatMap( (t, index)=>{
+      return  [ BCC.methods.getReserveBalance(t).call() ]
+    }))
+
+    const tokenRatios = await allSkippingErrors(tokens.flatMap( (t, index)=>{
+      return [ BCC.methods.getReserveRatio(t).call() ]
+    }))
+
+    // console.log("token1 converter data", token1);
+    let result = tokens.map((t,index)=>{
+      return {
+        address: t,
+        ...tokensInfo[index],
+        reserveRatio: tokenRatios[index],
+        reserveBalance: tokenBalances[index],
+      }
+    })
+    return result
+    // return {
+    //   tokens,
+    //   tokensInfo,
+    //   tokensData
+    // };
 }
 
 export const getBalanceOfToken = async (tokenAddress, isEth) => {

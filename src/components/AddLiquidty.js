@@ -11,7 +11,12 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import Web3 from 'web3';
 import StarIcon from '@material-ui/icons/Star';
+import Typography from '@material-ui/core/Typography';
+import AddIcon from '@material-ui/icons/Add';
+import Button from '@material-ui/core/Button';
+import Divider from '@material-ui/core/Divider';
 
+import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -20,7 +25,8 @@ import { FixedSizeList } from 'react-window';
 import {
   getSmartTokenData,
   getSmartTokenSymbol,
-  getConverterData
+  getConverterData,
+  getPoolReserves
 } from "../utils/tokens";
 
 import {
@@ -46,6 +52,9 @@ const useStyles = makeStyles(theme => ({
   root: {
     width: '100%',
     justifyContent: 'center'
+  },
+  smDataAddress:{
+    fontSize: 8
   },
   list: {
     width: '100%',
@@ -139,66 +148,37 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const ETH = {
-  address: "0xc0829421c1d260bd3cb3e0f06cfe2d52db2ce315",
-  name: "Ether Token",
-  symbol: "ETH",
-  img: "https://storage.googleapis.com/bancor-prod-file-store/images/communities/cache/aea83e97-13a3-4fe7-b682-b2a82299cdf2_200w.png",
-  decimals: "18",
-  isEth: true,
-  isBNT: false
-};
-const BNT = {
-  address: "0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c",
-  name: "Bancor Network Token",
-  symbol: "BNT",
-  img: "https://storage.googleapis.com/bancor-prod-file-store/images/communities/cache/f80f2a40-eaf5-11e7-9b5e-179c6e04aa7c_200w.png",
-  decimals: "18",
-  isEth: false,
-  isBNT: true
-};
-
 export default function AddLiquidty({ tokens, ready }) {
     const classes = useStyles();
     const [spinner, setSpinner] = useState(true);
     const [balance1, setBalance1] = useState(1);
-    const [currency1, setCurrency1] = useState(ETH);
-    const [currency2, setCurrency2] = useState(BNT);
-    const [balance2, setBalance2] = useState(0.1);
     const [smCount, setSMCount] = useState(0);
-    const [smData, setSMData] = useState({});
+    const [smData, setSMData] = useState(null);
+    const [reserves, setReserves] = useState([]);
+    const [reservesDisplay, setReservesDisplay] = useState([]);
     const [pools, setPools] = useState([]);
     const [smartTokens, setSmartTokens] = useState([]);
-    const [selectedTokens, setCTokens] = useState([]);
+    const [selectedTokens, setCTokens] = useState({});
     const [selectedSM, setSelectedSM] = useState(null);
     const [amountLoading, setLoading] = useState(0);
     const loading = tokens && !tokens.length;
     const [walletBalance, setWalletBalance] = useState(0);
 
     useEffect(() => {
-      console.log("AddLiquidty TOKENNNNNNNNNNNNNNNN", tokens, tokens);
-        if(ready)
+        if(ready && !!pools && !pools.length)
           getPools()
-    }, [ready]);
 
-
-  const changeB1 = (e) => {
-    console.log("changeb1", e);
-    // clearTimeout(timeOutId);
-    // setTimeOut(null)
-    setBalance1(e.target.value)
-    // useDebounce(updateReturn, 300)
-    setLoading(true)
-    // updateReturn()
-    // setTimeOut(setTimeout(() => updateReturn(), 300))
-  }
+        if(ready && !!reserves && !!reserves.length){
+          calculateFundingAmount(balance1)
+        }
+    }, [ready, reserves]);
 
   const addLiquidity = () => {
-
+    console.log('addLiquidity, lets go');
   }
 
   const getPools = async () => {
-    
+
     const x = window.contracts.converterRegistry
     const pools = await x.methods.getLiquidityPools().call()
     // const count = await x.methods.getSmartTokenCount().call()
@@ -215,52 +195,64 @@ export default function AddLiquidty({ tokens, ready }) {
     setPools(smartTokensSymbols)
     setSMCount(pools.length)
     //end loading pool
-    
+
     // const b2 = await x.methods.getConvertersBySmartTokens(smt).call()
     // https://github.com/pRoy24/katanapools/blob/7823606424d295aa4e315c5c8e308bd8761b2eaf/src/utils/RegistryUtils.js#L194
   }
 
   const getSelectedPools = async (givenTokens) => {
-    console.log('getting pools');
+    console.log('getting pools', givenTokens);
     const x = window.contracts.converterRegistry
     // const tokens = givenTokens.map((t)=> t.address)
 
     if ( !!givenTokens && !!givenTokens.address ){
-      let smartTokensResult = await x.methods.getConvertibleTokenSmartTokens(givenTokens.address).call();
-      // const pools = await x.methods.getConvertersBySmartTokens(tokens).call();
-      smartTokensResult = smartTokensResult.map( (t) => t.toString())
-      // const smartTokensSyms = await Promise.all(smartTokensResult.map(async (t) => await getSmartTokenData(t.toString())))
-      // const newTokens = ltokens.filter((t) => pools.includes(t.address))
-      // setTokens(newTokens)
-      console.log('getPools loaded', smartTokensResult, givenTokens ,web3);
-      setSMCount(smartTokensResult.length)
-      setSmartTokens(smartTokensResult)
-      let smartTokensSymbols = {}
-      await Promise.all(smartTokensResult.map(async (t) => {
-        // smartTokensSymbols[t.toString()] = await getSmartTokenSymbol(t.toString())
-        smartTokensSymbols[t.toString()] = await getSmartTokenData(t.toString())
-      }))
-      setSMData(smartTokensSymbols)
+      // let smartTokensResult = await x.methods.getConvertibleTokenSmartTokens(givenTokens.address).call();
+      // // const pools = await x.methods.getConvertersBySmartTokens(tokens).call();
+      // smartTokensResult = smartTokensResult.map( (t) => t.toString())
+      // // const smartTokensSyms = await Promise.all(smartTokensResult.map(async (t) => await getSmartTokenData(t.toString())))
+      // // const newTokens = ltokens.filter((t) => pools.includes(t.address))
+      // // setTokens(newTokens)
+      // console.log('getPools loaded', smartTokensResult, givenTokens ,web3);
+      // setSMCount(smartTokensResult.length)
+      // setSmartTokens(smartTokensResult)
+      // let smartTokensSymbols = {}
+      // await Promise.all(smartTokensResult.map(async (t) => {
+      //   // smartTokensSymbols[t.toString()] = await getSmartTokenSymbol(t.toString())
+      //   smartTokensSymbols[t.toString()] = await getSmartTokenData(t.toString())
+      // }))
+      const smartTokenData = await getSmartTokenData( givenTokens.address )
+      console.log('smartTokenData', smartTokenData);
+      const ConverterContract = new web3.eth.Contract(BancorConverter, smartTokenData.owner)
+      console.log('ConverterContract',ConverterContract);
+      setSMData({...smartTokenData, address: smartTokenData.owner })
+      const currentReserves = await getPoolReserves(smartTokenData.owner);
+      console.log('currentReserves',currentReserves);
+      setReserves(currentReserves)
     }
   }
 
-  const calculateFundingAmount = (inputFund) => {
-    const currentSelectedPool = selectedSM;
+  const calculateFundingAmount = async (inputFund) => {
+    const currentSelectedPool = smData;
 
     if (!isNaN(inputFund) && parseFloat(inputFund) > 0) {
       const totalSupply = new Decimal(fromDecimals(currentSelectedPool.totalSupply, currentSelectedPool.decimals));
       const addSupply = new Decimal(inputFund);
       const pcIncreaseSupply = addSupply.dividedBy(totalSupply);
 
-      const currentReserves = currentSelectedPool.reserves;
-      const reservesNeeded = currentReserves.map(function (item) {
-        const currentReserveSupply = new Decimal(item.reserveBalance);
+      const reservesNeeded = reserves.map(function (item) {
+        const currentReserveSupply = new Decimal(fromDecimals(item.reserveBalance, item.decimals));
         const currentReserveNeeded = pcIncreaseSupply.times(currentReserveSupply);
         const currentReserveNeededMin = toDecimals(currentReserveNeeded.toFixed(2, Decimal.ROUND_UP), item.decimals);
         const currentReserveNeededDisplay = currentReserveNeeded.toFixed(6, Decimal.ROUND_UP);
-        return Object.assign({}, item, { neededMin: currentReserveNeededMin, neededDisplay: currentReserveNeededDisplay });
+
+        return { neededMin: currentReserveNeededMin,
+             neededDisplay: currentReserveNeededDisplay,
+             reserveRatioDisplay: parseInt(item.reserveRatio)/10000
+           };
       });
-      this.setState({ reservesNeeded: reservesNeeded });
+      console.log('reservesNeeded', reservesNeeded);
+      setReservesDisplay(reservesNeeded)
+      // this.setState({ reservesNeeded: reservesNeeded });
     }
   }
 
@@ -278,14 +270,14 @@ export default function AddLiquidty({ tokens, ready }) {
 
   function renderRow(props) {
     const { index, style, data } = props;
-    
+
     const xdata = smData[data[index]] ? smData[data[index]] : { symbol: data[index], owner: "" }
     return (
       <ListItem button style={style} key={index} onClick={() => selectSM(xdata.owner)}>
         {selectedSM && selectedSM == data[index] && <ListItemIcon>
           <StarIcon />
         </ListItemIcon>}
-        <ListItemText 
+        <ListItemText
           primary={`${xdata.symbol}`}
           secondary={xdata.totalSupply ? "Total Supply: " + getTotalSupply(xdata.totalSupply, xdata.decimals) : ""}
          />
@@ -301,8 +293,7 @@ export default function AddLiquidty({ tokens, ready }) {
         value={selectedTokens}
         onChange={(event, newValue) => {
           console.log("pool", newValue);
-          
-          // getSelectedPools(newValue)
+          getSelectedPools(newValue)
           setCTokens(newValue);
         }}
         id="multiple-limit-tags"
@@ -314,10 +305,23 @@ export default function AddLiquidty({ tokens, ready }) {
           <TextField {...params} variant="outlined" label="Find Liquidity Pool" placeholder="Tokens" />
         )}
       />
-      
-      {!!smCount && <h5>
-        Available Pools : {smCount}
-      </h5>}
+
+      <h5>
+        Available Pools : {smCount ? smCount : 'Loading ...'}
+      </h5>
+
+      {!!smData && <div>
+        <Typography variant="h5" gutterBottom>
+          {smData.symbol}
+        </Typography>
+        <Typography variant="subtitle1" gutterBottom className={classes.smDataAddress}>
+          {smData.address}
+        </Typography>
+        <Typography variant="h6" gutterBottom>
+          {"Total Supply: " + getTotalSupply(smData.totalSupply, smData.decimals)}
+        </Typography>
+        <br/>
+      </div>}
 
       {!!smartTokens.length && <div className={classes.list}>
         <FixedSizeList height={200} width={300} itemSize={46} itemCount={smartTokens.length} itemData={smartTokens}>
@@ -331,9 +335,10 @@ export default function AddLiquidty({ tokens, ready }) {
         type="number"
         value={balance1}
         fullWidth
+        disabled={!smData}
         onChange={(event) => {
-          // calculateFundingAmount(event.target.value)
           setBalance1(event.target.value);
+          calculateFundingAmount(event.target.value)
         }}
         InputLabelProps={{
           shrink: true,
@@ -341,13 +346,36 @@ export default function AddLiquidty({ tokens, ready }) {
         variant="outlined"
       />
 
+    {!!reserves && !!reserves.length && <div>
+      <h6>You will needs to stake</h6>
+      <List component="nav" aria-label="main mailbox folders">
+      {reserves.map((r,i)=>(<ListItem key={i} button>
+          {<ListItemText
+            primary={r.symbol+' '+(reservesDisplay[i]?.neededDisplay ? reservesDisplay[i].neededDisplay : '')}
+            secondary={'Reserve Ratio: '+(reservesDisplay[i]?.reserveRatioDisplay ? reservesDisplay[i].reserveRatioDisplay+'%' : '')}
+          />}
+        </ListItem>))}
+      </List>
+    </div>}
+
+    {!!smData && <Divider style={{marginBottom:10, marginTop: 10}} />}
+      {!!smData && <Button
+        variant="outlined"
+        size="large"
+        color="primary"
+        startIcon={<AddIcon />}
+        onClick={addLiquidity}
+        >
+        Add Liquidty to {smData.symbol}
+      </Button>}
+
 
     </div>;
 }
 
 //show smart tokens with symbols done
 
-//get pool token address and reserve 
+//get pool token address and reserve
 
 // when click then let user fund the amount they want and calculate the result they'd get
 
