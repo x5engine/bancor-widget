@@ -7,9 +7,12 @@ import { fromDecimals, toDecimals } from "./eth";
 
 import Web3 from 'web3';
 const web3 = new Web3(Web3.givenProvider);
+const Decimal = require('decimal.js');
+const BigNumber = require('bignumber.js');
 
 const BancorConverter = require('../abis/BancorConverter.json');
 const ERC20Token = require('../abis/ERC20Token.json');
+const EtherToken = require('../abis/EtherToken.json');
 
 window.contracts = {
     contractRegistry : undefined,// contractRegistry instance
@@ -250,15 +253,21 @@ export const getConverterData = async(address) => {
 
 export const getER20Data = async(address) => {
   const token = new web3.eth.Contract(ERC20Token, address);
+  const senderAddress = web3.currentProvider.selectedAddress;
 
   const [decimals, symbol] = await allSkippingErrors([
       token.methods.decimals().call(),
       token.methods.symbol().call(),
   ]);
 
+  const [ balance ] = await allSkippingErrors([
+       token.methods.balanceOf(senderAddress).call()
+  ]);
+// symbol = 'ETH' ? web3.eth.getBalance(senderAddress) :
   return {
     decimals,
-    symbol
+    symbol,
+    balance
   }
 }
 
@@ -280,6 +289,8 @@ export const getPoolReserves = async(address) => {
     let tokensInfo = await allSkippingErrors(tokens.map((tokenAddress)=>{
       return getER20Data(tokenAddress)
     }));
+
+    console.log('tokensInfo', tokensInfo);
 
     const tokenBalances = await allSkippingErrors(tokens.flatMap( (t, index)=>{
       return  [ BCC.methods.getReserveBalance(t).call() ]
@@ -314,8 +325,8 @@ export const getBalanceOfToken = async (tokenAddress, isEth) => {
         return "0";
     }
     if (!isEth) {
-        // const erc20Contract = new web3.eth.Contract(ERC20Token, tokenAddress);
-        const erc20Contract = await Contract(eth, "ERC20Token", tokenAddress);
+        const erc20Contract = new web3.eth.Contract(ERC20Token, tokenAddress);
+        // const erc20Contract = await Contract(eth, "ERC20Token", tokenAddress);
         const addressBalanceResponse = await erc20Contract.methods.balanceOf(senderAddress).call()
         return addressBalanceResponse
     } else {
@@ -323,34 +334,109 @@ export const getBalanceOfToken = async (tokenAddress, isEth) => {
     }
 }
 
-// export const getUserPoolHoldings = (poolRow) => {
-//     const web3 = window.web3;
-//     const senderAddress = web3.currentProvider.selectedAddress;
-//     if (isEmptyString(senderAddress)) {
-//         return poolRow
-//     }
-//     const poolSmartTokenAddress = poolRow.address;
-//     const SmartTokenContract = new web3.eth.Contract(window.bancor.normal_abis.SmartToken, poolSmartTokenAddress);
+export const submitPoolBuy = (args, setAllDone) => {
+  const senderAddress = web3.currentProvider.selectedAddress;
+  const ConverterContract = new web3.eth.Contract(BancorConverter, args.converterAddress);
+  setPoolTransactionStatus({type: 'pending', message: 'Waiting for user approval'})
+  let resNeededApproval = args.reservesNeeded.map(function(item){
+    let reserveContract = {};
+    if (item.symbol === 'ETH') {
+      reserveContract = new web3.eth.Contract(EtherToken, item.address);
+      const reserveAmount = item.neededMin;
 
-//     let poolReserveHoldingsRequest = poolRow.reserves.map(function (item) {
-//         const reserveTokenAddress = item.address;
-//         let isEth = false;
-//         if (item.symbol === 'ETH') {
-//             isEth = true;
-//         }
-//         return getBalanceOfToken(reserveTokenAddress, isEth).then(function (balanceResponse) {
-//             const availableUserBalance = fromDecimals(balanceResponse, item.decimals);
-//             return Object.assign({}, item, { userBalance: availableUserBalance });
-//         })
-//     });
-//     return Promise.all(poolReserveHoldingsRequest).then(function (response) {
-//         return getSenderBalanceOfToken(SmartTokenContract, senderAddress).then(function (balanceData) {
-//             poolRow.reserves = response;
-//             poolRow.senderBalance = balanceData;
-//             return poolRow;
-//         });
-//     });
-// }
+      // if amount to deposit is > balance then deposit remainder
+      return reserveContract.methods.balanceOf(senderAddress).call().then(function(userBalance){
+      if ((new Decimal(userBalance)).lessThan(new Decimal(reserveAmount))) {
+
+      return reserveContract.methods.deposit().send({from: senderAddress, value: reserveAmount}, (err, txHash)=>{
+              setPoolTransactionStatus({type: 'pending', message: 'Depositing Ether into contract.'})
+      }).then(function(response){
+        return getApproval(reserveContract, senderAddress, args.converterAddress, reserveAmount).then((res)=>{
+          setAllDone(true)
+          return response;
+        });
+
+      });
+
+      } else {
+           return getApproval(reserveContract, senderAddress, args.converterAddress, reserveAmount).then((res)=>{
+             setAllDone(true)
+          return res;
+        });
+      }
+      });
+    } else {
+      reserveContract = new web3.eth.Contract(ERC20Token, item.address);
+      const reserveAmount = item.neededMin;
+      return getApproval(reserveContract, senderAddress,  args.converterAddress, reserveAmount).then((res)=>{
+        setAllDone(true)
+        return res;
+      })
+    }
+  });
+
+  Promise.all(resNeededApproval).then(function(approvalResponse){
+      ConverterContract.methods.fund(args.poolTokenProvided).send({
+        from: senderAddress
+      }, function(err, txHash){
+        setPoolTransactionStatus({type: 'pending', message: 'Funding pool with reserve tokens'})
+      }).then(function(fundRes){
+        setPoolTransactionStatus({type: 'success', message: 'Successfully Funded pool with reserve tokens'})
+      })
+  })
+
+
+}
+
+const setPoolTransactionStatus = (msg) =>{
+  console.log('msg',msg);
+}
+export const getApproval = (contract, owner, spender, amount) => {
+
+  return contract.methods.decimals().call().then(function(amountDecimals){
+  return contract.methods.allowance(owner, spender).call().then(function(allowance) {
+    if (!allowance || typeof allowance === undefined) {
+      allowance = 0;
+    }
+    let minAmount = amount;
+    let minAllowance = allowance;
+
+    let diff = new BigNumber(minAllowance).minus(new BigNumber(minAmount));
+
+    const amountAllowed = new Decimal(minAllowance);
+    const amountNeeded = new Decimal(minAmount);
+
+    if (amountNeeded.greaterThan(amountAllowed) &&  amountAllowed.isPositive() && !amountAllowed.isZero()) {
+      setPoolTransactionStatus({type: 'pending', message: 'Previous user allowance found. reseting allowance'})
+      return contract.methods.approve(web3.utils.toChecksumAddress(spender), 0).send({
+        from: owner
+      }).then(function(approveResetResponse){
+      setPoolTransactionStatus({type: 'pending', message: 'Waiting for user approval for token transfer'})
+    return contract.methods.approve(web3.utils.toChecksumAddress(spender), amount).send({
+       from: owner
+    }, function(err, txHash){
+      setPoolTransactionStatus({type: 'pending', message: 'Appoving token transfer'})
+    }).then(function(allowanceResponse){
+        setPoolTransactionStatus({type: 'pending', message: 'Token transfer approved.'})
+      return allowanceResponse;
+    })
+    });
+    } else if (amountNeeded.greaterThan(amountAllowed) &&  amountAllowed.isZero()) {
+      setPoolTransactionStatus({type: 'pending', message: 'Waiting for user approval for token transfer'})
+        return contract.methods.approve(web3.utils.toChecksumAddress(spender), amount).send({
+           from: owner
+        }, function(err, txHash){
+          setPoolTransactionStatus({type: 'pending', message: 'Appoving token transfer'})
+        }).then(function(allowanceResponse){
+            setPoolTransactionStatus({type: 'pending', message: 'Token transfer approved.'})
+          return allowanceResponse;
+        })
+    } else {
+      return null;
+    }
+  });
+  });
+}
 
 const addLiquidity = () => {
     const x = window.contracts.converterRegistry

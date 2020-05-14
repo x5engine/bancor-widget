@@ -17,8 +17,10 @@ import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 
 import List from '@material-ui/core/List';
+import Alert from '@material-ui/lab/Alert';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import { FixedSizeList } from 'react-window';
 
@@ -26,7 +28,9 @@ import {
   getSmartTokenData,
   getSmartTokenSymbol,
   getConverterData,
-  getPoolReserves
+  getPoolReserves,
+  getBalanceOfToken,
+  submitPoolBuy
 } from "../utils/tokens";
 
 import {
@@ -150,15 +154,18 @@ const useStyles = makeStyles(theme => ({
 
 export default function AddLiquidty({ tokens, ready }) {
     const classes = useStyles();
+    const [allDone, setAllDone] = useState(false);
     const [spinner, setSpinner] = useState(true);
     const [balance1, setBalance1] = useState(1);
     const [smCount, setSMCount] = useState(0);
     const [smData, setSMData] = useState(null);
     const [reserves, setReserves] = useState([]);
     const [reservesDisplay, setReservesDisplay] = useState([]);
+    const [errors, setErrors] = useState('');
     const [pools, setPools] = useState([]);
     const [smartTokens, setSmartTokens] = useState([]);
     const [selectedTokens, setCTokens] = useState({});
+    const [tokenUserBalance, setTokensBalance] = useState({});
     const [selectedSM, setSelectedSM] = useState(null);
     const [amountLoading, setLoading] = useState(0);
     const loading = tokens && !tokens.length;
@@ -239,15 +246,21 @@ export default function AddLiquidty({ tokens, ready }) {
       const addSupply = new Decimal(inputFund);
       const pcIncreaseSupply = addSupply.dividedBy(totalSupply);
 
-      const reservesNeeded = reserves.map(function (item) {
+      const reservesNeeded = reserves.map( (item) => {
         const currentReserveSupply = new Decimal(fromDecimals(item.reserveBalance, item.decimals));
         const currentReserveNeeded = pcIncreaseSupply.times(currentReserveSupply);
         const currentReserveNeededMin = toDecimals(currentReserveNeeded.toFixed(2, Decimal.ROUND_UP), item.decimals);
         const currentReserveNeededDisplay = currentReserveNeeded.toFixed(6, Decimal.ROUND_UP);
-
+        let isError = false;
+        const amountAvailable = new Decimal(item.balance);
+        if (currentReserveNeeded.greaterThan(amountAvailable)) {
+          isError = true;
+          setErrors(true);
+        }
         return { neededMin: currentReserveNeededMin,
              neededDisplay: currentReserveNeededDisplay,
-             reserveRatioDisplay: parseInt(item.reserveRatio)/10000
+             reserveRatioDisplay: parseInt(item.reserveRatio)/10000,
+             notEnough: isError
            };
       });
       console.log('reservesNeeded', reservesNeeded);
@@ -255,6 +268,32 @@ export default function AddLiquidty({ tokens, ready }) {
       // this.setState({ reservesNeeded: reservesNeeded });
     }
   }
+
+  const submitBuyPoolToken = () => {
+    const currentSelectedPool = smData;
+  const args = {
+    poolTokenProvided: toDecimals(balance1, currentSelectedPool.decimals),
+    reservesNeeded: reserves,
+    converterAddress: currentSelectedPool.converter
+  };
+
+  let isError = false;
+  const web3 = window.web3;
+
+  const currentWalletAddress = web3.currentProvider ? web3.currentProvider.selectedAddress : '';
+
+  if (reserves.length > 0) {
+    reserves.forEach( (reserveItem)=>{
+      if (reserves.notEnough) {
+        isError = true;
+      }
+    })
+  }
+
+  if (!isError) {
+    submitPoolBuy(args, setAllDone);
+  }
+}
 
   const getTotalSupply = ( value, decimals ) => {
     return toFixed(fromDecimals(value, decimals))
@@ -349,22 +388,27 @@ export default function AddLiquidty({ tokens, ready }) {
     {!!reserves && !!reserves.length && <div>
       <h6>You will needs to stake</h6>
       <List component="nav" aria-label="main mailbox folders">
-        <h4>{ reservesDisplay[0]?.neededDisplay=='NaN' && 'This Pool needs to be upgraded to load its reserves ratios'}</h4>
       {reserves.map((r,i)=>(<ListItem key={i} button>
           {<ListItemText
             primary={r.symbol+' '+(reservesDisplay[i]?.neededDisplay ? reservesDisplay[i].neededDisplay : '')}
             secondary={'Reserve Ratio: '+(reservesDisplay[i]?.reserveRatioDisplay ? reservesDisplay[i].reserveRatioDisplay+'%' : '')}
           />}
+          {!!r.balance && <ListItemSecondaryAction>
+            Balance : {r.balance} {r.notEnough ? '(Not Enough)' : ''}
+          </ListItemSecondaryAction>}
         </ListItem>))}
       </List>
     </div>}
 
+    {errors && <Alert severity="warning">You don't enough balance to add liquidity to {smData.symbol}</Alert> }
+    {allDone && <Alert severity="success">You have Successfully added liquidity to {smData.symbol}</Alert> }
     {!!smData && <Divider style={{marginBottom:10, marginTop: 10}} />}
       {!!smData && <Button
         variant="outlined"
         size="large"
         color="primary"
         startIcon={<AddIcon />}
+        disabled={errors}
         onClick={addLiquidity}
         >
         Add Liquidty to {smData.symbol}
