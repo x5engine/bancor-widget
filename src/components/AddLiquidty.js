@@ -9,7 +9,40 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import FormHelperText from '@material-ui/core/FormHelperText';
+import Web3 from 'web3';
+import StarIcon from '@material-ui/icons/Star';
+import Typography from '@material-ui/core/Typography';
+import AddIcon from '@material-ui/icons/Add';
+import Button from '@material-ui/core/Button';
+import Divider from '@material-ui/core/Divider';
 
+import List from '@material-ui/core/List';
+import Alert from '@material-ui/lab/Alert';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import ListItemText from '@material-ui/core/ListItemText';
+import { FixedSizeList } from 'react-window';
+
+import {
+  getSmartTokenData,
+  getSmartTokenSymbol,
+  getConverterData,
+  getPoolReserves,
+  getBalanceOfToken,
+  submitPoolBuy
+} from "../utils/tokens";
+
+import {
+  fromDecimals,
+  toDecimals
+} from "../utils/eth";
+
+
+const web3 = new Web3(Web3.givenProvider);
+const BancorConverter = require('../abis/BancorConverter.json');
+const BigNumber = require('bignumber.js');
+const Decimal = require('decimal.js');
 
 const toFixed = (x) => {
   const y = parseFloat(x)
@@ -23,6 +56,16 @@ const useStyles = makeStyles(theme => ({
   root: {
     width: '100%',
     justifyContent: 'center'
+  },
+  smDataAddress:{
+    fontSize: 8
+  },
+  list: {
+    width: '100%',
+    height: 200,
+    maxWidth: 300,
+    backgroundColor: theme.palette.background.paper,
+    marginBottom: 8
   },
   actions: {
     justifyContent: 'center'
@@ -109,114 +152,280 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const ETH = {
-  address: "0xc0829421c1d260bd3cb3e0f06cfe2d52db2ce315",
-  name: "Ether Token",
-  symbol: "ETH",
-  img: "https://storage.googleapis.com/bancor-prod-file-store/images/communities/cache/aea83e97-13a3-4fe7-b682-b2a82299cdf2_200w.png",
-  decimals: "18",
-  isEth: true,
-  isBNT: false
-};
-const BNT = {
-  address: "0x1f573d6fb3f13d689ff844b4ce37794d79a7ff1c",
-  name: "Bancor Network Token",
-  symbol: "BNT",
-  img: "https://storage.googleapis.com/bancor-prod-file-store/images/communities/cache/f80f2a40-eaf5-11e7-9b5e-179c6e04aa7c_200w.png",
-  decimals: "18",
-  isEth: false,
-  isBNT: true
-};
-
-export default function AddLiquidty({ tokens }) {
+export default function AddLiquidty({ tokens, ready }) {
     const classes = useStyles();
+    const [allDone, setAllDone] = useState(false);
     const [spinner, setSpinner] = useState(true);
-    const [balance1, setBalance1] = useState(0.1);
-    const [currency1, setCurrency1] = useState(ETH);
-    const [currency2, setCurrency2] = useState(BNT);
-    const [balance2, setBalance2] = useState(0.1);
+    const [balance1, setBalance1] = useState(1);
+    const [smCount, setSMCount] = useState(0);
+    const [smData, setSMData] = useState(null);
+    const [reserves, setReserves] = useState([]);
+    const [reservesDisplay, setReservesDisplay] = useState([]);
+    const [errors, setErrors] = useState('');
+    const [pools, setPools] = useState([]);
+    const [smartTokens, setSmartTokens] = useState([]);
+    const [selectedTokens, setCTokens] = useState({});
+    const [tokenUserBalance, setTokensBalance] = useState({});
+    const [selectedSM, setSelectedSM] = useState(null);
     const [amountLoading, setLoading] = useState(0);
     const loading = tokens && !tokens.length;
     const [walletBalance, setWalletBalance] = useState(0);
 
     useEffect(() => {
-        // setTimeout(() => setSpinner(false), 500)
-    }, []);
+        if(ready && !!pools && !pools.length)
+          getPools()
 
+        if(ready && !!reserves && !!reserves.length){
+          calculateFundingAmount(balance1)
+        }
+    }, [ready, reserves]);
 
-  const changeB1 = (e) => {
-    console.log("changeb1", e);
-    // clearTimeout(timeOutId);
-    // setTimeOut(null)
-    setBalance1(e.target.value)
-    // useDebounce(updateReturn, 300)
-    setLoading(true)
-    // updateReturn()
-    // setTimeOut(setTimeout(() => updateReturn(), 300))
+  const addLiquidity = () => {
+    console.log('addLiquidity, lets go');
   }
 
-    return <div item className={classes.root}>
+  const getPools = async () => {
 
-      <h2>AddLiquidty</h2>
-      <FormControl className={classes.formControl} variant="outlined" fullWidth>
-        <OutlinedInput
-          classes={{ root: classes.input }}
-          value={toFixed(balance1)}
-          onChange={changeB1}
-          autoFocus
-          id="source-pocket-input"
-          inputComponent={NumberFormatInput}
-          endAdornment={<Autocomplete
-            id="combo-box-demo"
-            options={tokens}
-            size={'medium'}
-            className={classes.autoc}
-            value={currency1}
+    const x = window.contracts.converterRegistry
+    const pools = await x.methods.getLiquidityPools().call()
+    // const count = await x.methods.getSmartTokenCount().call()
+    console.log('getPools loaded', pools);
+    let smartTokensSymbols = await Promise.all(pools.map(async (t) => {
+      // smartTokensSymbols[t.toString()] = await getSmartTokenSymbol(t.toString())
+      return {
+        address: t.toString(),
+        symbol: await getSmartTokenSymbol(t.toString())
+      }
+    }))
+    //set loading pools
+    // console.log('smartTokensSymbols loaded', smartTokensSymbols);
+    setPools(smartTokensSymbols)
+    setSMCount(pools.length)
+    //end loading pool
 
-            onChange={(event, newValue) => {
-              console.log('================newValue====================');
-              console.log(newValue);
-              console.log('====================================');
-              setCurrency1(newValue);
-            }}
-            getOptionSelected={(option, value) => currency1 && option.symbol === currency1.symbol}
-            getOptionLabel={option => option.symbol ? option.symbol : ''}
-            renderOption={(option, { selected }) => (
-              <div className={classes.currencyElement}>
-                {option.img && <img
-                  className={classes.currency}
-                  src={option.img}
-                  alt={option.symbol}
-                />}
-                <b>{option.symbol}</b>
-                <br />
-                {option.name}
-              </div>
-            )}
-            renderInput={params => <TextField
-              {...params}
-              value={params ? params.symbol : ''}
-              InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <React.Fragment>
-                    {loading ? <CircularProgress color="secondary" size={10} /> : null}
-                  </React.Fragment>
-                ),
-              }}
-              helperText={params && (params.symbol == "DAI" || params.symbol == 'ETH') ? "Buy " + params.symbol + " with your credit Card" : null}
-              variant="outlined"
-            />}
+    // const b2 = await x.methods.getConvertersBySmartTokens(smt).call()
+    // https://github.com/pRoy24/katanapools/blob/7823606424d295aa4e315c5c8e308bd8761b2eaf/src/utils/RegistryUtils.js#L194
+  }
+
+  const getSelectedPools = async (givenTokens) => {
+    console.log('getting pools', givenTokens);
+    const x = window.contracts.converterRegistry
+    // const tokens = givenTokens.map((t)=> t.address)
+
+    if ( !!givenTokens && !!givenTokens.address ){
+      // let smartTokensResult = await x.methods.getConvertibleTokenSmartTokens(givenTokens.address).call();
+      // // const pools = await x.methods.getConvertersBySmartTokens(tokens).call();
+      // smartTokensResult = smartTokensResult.map( (t) => t.toString())
+      // // const smartTokensSyms = await Promise.all(smartTokensResult.map(async (t) => await getSmartTokenData(t.toString())))
+      // // const newTokens = ltokens.filter((t) => pools.includes(t.address))
+      // // setTokens(newTokens)
+      // console.log('getPools loaded', smartTokensResult, givenTokens ,web3);
+      // setSMCount(smartTokensResult.length)
+      // setSmartTokens(smartTokensResult)
+      // let smartTokensSymbols = {}
+      // await Promise.all(smartTokensResult.map(async (t) => {
+      //   // smartTokensSymbols[t.toString()] = await getSmartTokenSymbol(t.toString())
+      //   smartTokensSymbols[t.toString()] = await getSmartTokenData(t.toString())
+      // }))
+      const smartTokenData = await getSmartTokenData( givenTokens.address )
+      console.log('smartTokenData', smartTokenData);
+      const ConverterContract = new web3.eth.Contract(BancorConverter, smartTokenData.owner)
+      console.log('ConverterContract',ConverterContract);
+      setSMData({...smartTokenData, address: smartTokenData.owner })
+      const currentReserves = await getPoolReserves(smartTokenData.owner);
+      console.log('currentReserves',currentReserves);
+      setReserves(currentReserves)
+    }
+  }
+
+  const calculateFundingAmount = async (inputFund) => {
+    const currentSelectedPool = smData;
+
+    if (!isNaN(inputFund) && parseFloat(inputFund) > 0) {
+      const totalSupply = new Decimal(fromDecimals(currentSelectedPool.totalSupply, currentSelectedPool.decimals));
+      const addSupply = new Decimal(inputFund);
+      const pcIncreaseSupply = addSupply.dividedBy(totalSupply);
+
+      const reservesNeeded = reserves.map( (item) => {
+        const currentReserveSupply = new Decimal(fromDecimals(item.reserveBalance, item.decimals));
+        const currentReserveNeeded = pcIncreaseSupply.times(currentReserveSupply);
+        const currentReserveNeededMin = toDecimals(currentReserveNeeded.toFixed(2, Decimal.ROUND_UP), item.decimals);
+        const currentReserveNeededDisplay = currentReserveNeeded.toFixed(6, Decimal.ROUND_UP);
+        let isError = false;
+        const amountAvailable = new Decimal(item.balance);
+        if (currentReserveNeeded.greaterThan(amountAvailable)) {
+          isError = true;
+          setErrors(true);
+        }
+        return { neededMin: currentReserveNeededMin,
+             neededDisplay: currentReserveNeededDisplay,
+             reserveRatioDisplay: parseInt(item.reserveRatio)/10000,
+             notEnough: isError
+           };
+      });
+      console.log('reservesNeeded', reservesNeeded);
+      setReservesDisplay(reservesNeeded)
+      // this.setState({ reservesNeeded: reservesNeeded });
+    }
+  }
+
+  const submitBuyPoolToken = () => {
+    const currentSelectedPool = smData;
+  const args = {
+    poolTokenProvided: toDecimals(balance1, currentSelectedPool.decimals),
+    reservesNeeded: reserves,
+    converterAddress: currentSelectedPool.converter
+  };
+
+  let isError = false;
+  const web3 = window.web3;
+
+  const currentWalletAddress = web3.currentProvider ? web3.currentProvider.selectedAddress : '';
+
+  if (reserves.length > 0) {
+    reserves.forEach( (reserveItem)=>{
+      if (reserves.notEnough) {
+        isError = true;
+      }
+    })
+  }
+
+  if (!isError) {
+    submitPoolBuy(args, setAllDone);
+  }
+}
+
+  const getTotalSupply = ( value, decimals ) => {
+    return toFixed(fromDecimals(value, decimals))
+  }
+
+  const selectSM = async (address) => {
+    if(!address) return false
+    const ConverterContract = new web3.eth.Contract(BancorConverter, address);
+    const converterData = await getConverterData(address)
+    setSelectedSM({ ...converterData, address})
+    console.log('you selected this convereter', address, converterData, ConverterContract);
+  }
+
+  function renderRow(props) {
+    const { index, style, data } = props;
+
+    const xdata = smData[data[index]] ? smData[data[index]] : { symbol: data[index], owner: "" }
+    return (
+      <ListItem button style={style} key={index} onClick={() => selectSM(xdata.owner)}>
+        {selectedSM && selectedSM == data[index] && <ListItemIcon>
+          <StarIcon />
+        </ListItemIcon>}
+        <ListItemText
+          primary={`${xdata.symbol}`}
+          secondary={xdata.totalSupply ? "Total Supply: " + getTotalSupply(xdata.totalSupply, xdata.decimals) : ""}
+         />
+      </ListItem>
+    );
+  }
+
+    return <div className={classes.root}>
+
+      <h2>Add Liquidty</h2>
+
+      <Autocomplete
+        value={selectedTokens}
+        onChange={(event, newValue) => {
+          console.log("pool", newValue);
+          getSelectedPools(newValue)
+          setCTokens(newValue);
+        }}
+        id="multiple-limit-tags"
+        options={pools}
+        getOptionSelected={(option, value) => selectedTokens && option.symbol === selectedTokens.symbol }
+        getOptionLabel={option => option.symbol ? option.symbol : ''}
+        // defaultValue={[tokens[194], tokens[191]]}
+        renderInput={(params) => (
+          <TextField {...params} variant="outlined" label="Find Liquidity Pool" placeholder="Tokens" />
+        )}
+      />
+
+      <h5>
+        Available Pools : {smCount ? smCount : 'Loading ...'}
+      </h5>
+
+      {!!smData && <div>
+        <Typography variant="h5" gutterBottom>
+          {smData.symbol}
+        </Typography>
+        <Typography variant="subtitle1" gutterBottom className={classes.smDataAddress}>
+          {smData.address}
+        </Typography>
+        <Typography variant="h6" gutterBottom>
+          {"Total Supply: " + getTotalSupply(smData.totalSupply, smData.decimals)}
+        </Typography>
+        <br/>
+      </div>}
+
+      {!!smartTokens.length && <div className={classes.list}>
+        <FixedSizeList height={200} width={300} itemSize={46} itemCount={smartTokens.length} itemData={smartTokens}>
+          {renderRow}
+        </FixedSizeList>
+      </div>}
+
+      <TextField
+        id="outlined-number"
+        label="Amout to Add"
+        type="number"
+        value={balance1}
+        fullWidth
+        disabled={!smData}
+        onChange={(event) => {
+          setBalance1(event.target.value);
+          calculateFundingAmount(event.target.value)
+        }}
+        InputLabelProps={{
+          shrink: true,
+        }}
+        variant="outlined"
+      />
+
+    {!!reserves && !!reserves.length && <div>
+      <h6>You will needs to stake</h6>
+      <List component="nav" aria-label="main mailbox folders">
+      {reserves.map((r,i)=>(<ListItem key={i} button>
+          {<ListItemText
+            primary={r.symbol+' '+(reservesDisplay[i]?.neededDisplay ? reservesDisplay[i].neededDisplay : '')}
+            secondary={'Reserve Ratio: '+(reservesDisplay[i]?.reserveRatioDisplay ? reservesDisplay[i].reserveRatioDisplay+'%' : '')}
           />}
-          aria-describedby="current-balance"
-          labelWidth={0}
-          inputProps={{
-            // prefix: inputs.current ? '﹣' : '',
-            // validateChange: validateCurrentChange,
-          }}
-        />
-        {walletBalance ? <FormHelperText id="component-helper-text1" className={classes.walletBalance} onClick={() => setBalance1(walletBalance.toFixed(3))}>You have {walletBalance.toFixed(3)} {currency1 && currency1.symbol}</FormHelperText> : null}
+          {!!r.balance && <ListItemSecondaryAction>
+            Balance : {r.balance} {r.notEnough ? '(Not Enough)' : ''}
+          </ListItemSecondaryAction>}
+        </ListItem>))}
+      </List>
+    </div>}
 
-      </FormControl>
+    {errors && <Alert severity="warning">You don't enough balance to add liquidity to {smData.symbol}</Alert> }
+    {allDone && <Alert severity="success">You have Successfully added liquidity to {smData.symbol}</Alert> }
+    {!!smData && <Divider style={{marginBottom:10, marginTop: 10}} />}
+      {!!smData && <Button
+        variant="outlined"
+        size="large"
+        color="primary"
+        startIcon={<AddIcon />}
+        disabled={errors}
+        onClick={addLiquidity}
+        >
+        Add Liquidty to {smData.symbol}
+      </Button>}
+
+
     </div>;
 }
+
+//show smart tokens with symbols done
+
+//get pool token address and reserve
+
+// when click then let user fund the amount they want and calculate the result they'd get
+
+
+//apporve tokens for each token (with allowence)
+
+//get the funds from the pool
+// https://thegraph.com/explorer/subgraph/blocklytics/bancor?query=All%20Smart%20Tokens

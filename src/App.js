@@ -101,16 +101,16 @@ async function fetchData(getToken) {
     return tokens
   }
 
-  // window.ethereum.on("networkChanged", _networkId => {
-  //   if (_networkId) {
-  //     console.log('sub eth');
+  window.ethereum.on("networkChanged", _networkId => {
+    if (_networkId) {
+      console.log('sub eth');
 
-  //     registryInit(_eth, {
-  //       showRelayTokens,
-  //       addresses
-  //     });
-  //   }
-  // });
+      registryInit(_eth, {
+        showRelayTokens,
+        addresses
+      });
+    }
+  });
 }
 
 function TabPanel(props) {
@@ -134,7 +134,7 @@ function App() {
   const classes = useStyles();
   const [loader, setLoader] = useState(true);
   const [dark, setDark] = useState(false);
-  const [tabIndex, setTab] = useState(0);
+  const [tabIndex, setTab] = useState(1);
   const [tokens, setTokens] = useState([]);
   const [xweb3, setWeb3] = useState({});
   const [account, setAccount] = useState("");

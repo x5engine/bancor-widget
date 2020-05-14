@@ -21,7 +21,8 @@ export default function RemoveLiquidity() {
 
     return <div item className={classes.root}>
 
-      <h2>RemoveLiquidity</h2>
+      <h2>Remove Liquidity</h2>
+      <h5>Coming Soon</h5>
 
     </div>;
 }

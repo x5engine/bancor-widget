@@ -93,10 +93,10 @@ export const sync = async () => {
     window.bancor.networkId = _networkId
     const _account = await getAccount();
     window.bancor.account = _account
-    console.log('got network', _account,_networkId);
+    console.log('got network', _account, _networkId, addresses[_networkId]);
     await window.bancor.bancorSdk.init({
         ethereumNodeEndpoint:
-            "https://mainnet.infura.io/v3/ec2c4801bcf44d9daa49f2e541851706",
+            _networkId == 1 ? "https://mainnet.infura.io/v3/ec2c4801bcf44d9daa49f2e541851706" : "https://ropsten.infura.io/v3/ec2c4801bcf44d9daa49f2e541851706",
             ethereumContractRegistryAddress: addresses[_networkId]
     });
 };
