@@ -134,7 +134,7 @@ function App() {
   const classes = useStyles();
   const [loader, setLoader] = useState(true);
   const [dark, setDark] = useState(false);
-  const [tabIndex, setTab] = useState(1);
+  const [tabIndex, setTab] = useState(0);
   const [tokens, setTokens] = useState([]);
   const [xweb3, setWeb3] = useState({});
   const [account, setAccount] = useState("");
@@ -207,7 +207,8 @@ function App() {
              account={account}
              balance={balance}
              go2Crypto={() => setTab(2)}
-             web={xweb3} />
+             web={xweb3}
+           />
         </TabPanel>
         <TabPanel value={tabIndex} index={1}>
           <Pool
