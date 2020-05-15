@@ -103,7 +103,7 @@ export default function BuyCrypto({ open, account, goBack }) {
       <Button style={{marginBottom:20}} variant="contained" color="primary" onClick={getCrypto}>Buy Crypto</Button>
     </div>}
     {showWyre && <Iframe url={url}
-      width="350px"
+      width="100%"
       height="550px"
       id="wyreCrypto"
       className="wyreX"

@@ -23,7 +23,7 @@ const useStyles = makeStyles(theme => ({
 export default function Pool(props) {
     const classes = useStyles();
     const [spinner, setSpinner] = useState(true);
-    const [action, setAction] = useState(0);
+    const [action, setAction] = useState(2);
     useEffect(() => {
         // setTimeout(() => setSpinner(false), 500)
     }, []);
