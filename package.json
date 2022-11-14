@@ -24,7 +24,7 @@
     "react-iframe": "^1.8.0",
     "react-number-format": "^4.4.1",
     "react-router-dom": "^5.1.2",
-    "react-scripts": "3.4.0",
+    "react-scripts": "5.0.1",
     "react-window": "^1.8.5",
     "underscore": "^1.10.2",
     "web3": "^1.2.6",
